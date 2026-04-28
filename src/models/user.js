@@ -14,6 +14,11 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey : "userId" , 
         as : "otpcode"
       })
+
+      Users.hasMany(models.refreshTokens , {
+        foreignKey : "userId" ,
+        as : "refreshTokens"
+      })
     }
   }
 
