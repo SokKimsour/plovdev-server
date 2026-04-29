@@ -14,6 +14,12 @@ app.use('/api/v1', authRoutes);
 const otpRoutes = require('./src/routes/Otp.route');
 app.use('/api/v1', otpRoutes);
 
+const teacherRoutes = require('./src/routes/TeacherProfile.route');
+app.use('/api/v1', teacherRoutes);
+
+const studentRoutes = require('./src/routes/StudentProfile.route');
+app.use('/api/v1', studentRoutes);
+
 
 
 app.listen(port, () => {

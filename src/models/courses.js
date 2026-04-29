@@ -1,7 +1,7 @@
 "use strict";
 const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
-  class teacher_profiles extends Model {
+  class courses extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -10,62 +10,58 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       this.belongsTo(models.Users, {
-        foreignKey: "userId",
-        as: "user",
+        foreignKey: "teacherId",
+        as: "teacher",
       });
     }
   }
-  teacher_profiles.init(
+  courses.init(
     {
-      profileUrl: {
+      title_en: {
         type: DataTypes.STRING,
-        allowNull: true,
+        allowNull: false,
       },
-      profilePublicId : {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      bio: {
+      description: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      yearsExp: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
+      thumbnailUrl: DataTypes.STRING,
+      price: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0.0,
       },
-      payoutAccount: {
+      thumbnailPublicId: {
         type: DataTypes.STRING,
-        allowNull: true,
-      },
-      commissionRate: {
-        type: DataTypes.DECIMAL,
-        allowNull: true,
-        defaultValue: 0.4,
       },
       avgRating: {
-        type: DataTypes.DECIMAL,
-        allowNull: true,
-        defaultValue: 0,
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0.0,
       },
-      total_students: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-        defaultValue: 0,
-      },
-      userId: {
+      totalStudents: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        unique: true,
-        references: {
-          model: "Users",
-          key: "id",
-        },
+        defaultValue: 0,
+      },
+      totalReview: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      is_published: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+      teacherId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
       },
     },
     {
       sequelize,
-      modelName: "teacher_profiles",
+      modelName: "courses",
     },
   );
-  return teacher_profiles;
+  return courses;
 };

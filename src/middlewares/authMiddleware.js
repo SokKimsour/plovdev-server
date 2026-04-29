@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const authenticateToken = (req, res, next) => {
   try {
     const authHeader = req.headers["authorization"];
-    console.log("Authorization Header:", authHeader); // Debugging line
+
     if (!authHeader) {
       return res
         .status(401)
@@ -19,6 +19,7 @@ const authenticateToken = (req, res, next) => {
     if (!decoded) {
       return res.status(401).json({ message: "Invalid token!" });
     }
+
 
     req.user = decoded; // Attach user info to request
     next();

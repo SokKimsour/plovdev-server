@@ -183,6 +183,139 @@ const logout = async (req, res) => {
   }
 };
 
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required!' })
+    }
+
+    // CHECK IF USER EXISTS
+    const user = await Users.findOne({ where: { email } })
+    if (!user) {
+      return res.status(404).json({ message: 'Email not found!' })
+    }
+
+    // GENERATE OTP
+    const otpCode = generateOtp()
+
+    // SEND EMAIL FIRST
+    await sendEmail(
+      email,
+      'PlovDev - Reset Your Password',
+      `
+        <h2>Reset Your Password</h2>
+        <p>Your password reset code is:</p>
+        <h1 style="color: #000000">${otpCode}</h1>
+        <p>This code expires in 10 minutes.</p>
+      `
+    )
+
+    // DELETE OLD OTP
+    await OtpCode.destroy({ where: { userId: user.id } })
+
+    // SAVE NEW OTP
+    await OtpCode.create({
+      code: otpCode,
+      userId: user.id,
+      expireAt: new Date(Date.now() + 10 * 60 * 1000),
+      is_used: false
+    })
+
+    res.json({
+      message: 'Password reset code sent to your email!',
+      userId: user.id
+    })
+
+  } catch (error) {
+    res.status(500).json({ messageError: error.message })
+  }
+}
+
+const verifyForgotOtp = async (req, res) => {
+  try {
+    const { userId, code } = req.body
+
+    if (!userId || !code) {
+      return res.status(400).json({ message: 'Please provide userId and code!' })
+    }
+
+    // FIND OTP
+    const otp = await OtpCode.findOne({
+      where: { userId, code, is_used: false }
+    })
+
+    if (!otp) {
+      return res.status(400).json({ message: 'Invalid OTP code!' })
+    }
+
+    // CHECK IF EXPIRED
+    if (new Date() > otp.expireAt) {
+      return res.status(400).json({ message: 'OTP code has expired!' })
+    }
+
+    // MARK OTP AS USED
+    await otp.update({ is_used: true })
+
+    res.json({
+      message: 'OTP verified successfully. You can now reset your password.',
+      userId
+    })
+
+  } catch (error) {
+    res.status(500).json({ messageError: error.message })
+  }
+}
+
+// RESET PASSWORD
+const resetPassword = async (req, res) => {
+  try {
+    const { userId, newPassword } = req.body
+
+    if (!userId || !newPassword) {
+      return res.status(400).json({ message: 'Please provide userId and new password!' })
+    }
+
+    // VALIDATE NEW PASSWORD
+    if (!validator.isStrongPassword(newPassword, {
+      minLength: 8,
+      minUppercase: 0,
+      minLowercase: 0,
+      minNumbers: 0,
+      minSymbols: 0
+    })) {
+      return res.status(400).json({ message: 'Weak password: at least 8 characters!' })
+    }
+
+    // CHECK IF USER EXISTS
+    const user = await Users.findOne({ where: { id: userId } })
+    if (!user) {
+      return res.status(404).json({ message: 'User not found!' })
+    }
+
+    // HASH NEW PASSWORD
+    const hashPassword = await bcrypt.hash(newPassword, 10)
+
+    // UPDATE PASSWORD
+    await Users.update(
+      { password: hashPassword },
+      { where: { id: userId } }
+    )
+
+    // REVOKE ALL REFRESH TOKENS - force user to login again
+    await refreshTokens.update(
+      { is_revoked: true },
+      { where: { userId } }
+    )
+
+    res.json({ message: 'Password reset successfully. Please login again.' })
+
+  } catch (error) {
+    res.status(500).json({ messageError: error.message })
+  }
+}
+
 // REFRESH TOKEN
 const refreshToken = async (req, res) => {
   try {
@@ -213,7 +346,7 @@ const refreshToken = async (req, res) => {
       }
 
       const newAccessToken = jwt.sign(
-        { userId: decoded.userId, role: decoded.role },
+        { id: decoded.id, role: decoded.role },
         process.env.JWT_SECRET,
         { expiresIn: process.env.JWT_EXPIRES_IN },
       );
@@ -251,4 +384,7 @@ module.exports = {
   logout,
   refreshToken,
   getMe,
+  forgotPassword,
+  verifyForgotOtp,
+  resetPassword,
 };

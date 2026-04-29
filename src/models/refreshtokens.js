@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      refreshTokens.belongsTo(models.Users, { 
+      this.belongsTo(models.Users, { 
         foreignKey: 'userId',
         as : "user"
       })
