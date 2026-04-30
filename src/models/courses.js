@@ -25,11 +25,25 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      what_you_learn: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
       thumbnailUrl: DataTypes.STRING,
       price: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
         defaultValue: 0.0,
+      },
+      original_price: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0.0,
+      },
+      is_best_seller: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
       },
       thumbnailPublicId: {
         type: DataTypes.STRING,

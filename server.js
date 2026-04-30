@@ -20,6 +20,12 @@ app.use('/api/v1', teacherRoutes);
 const studentRoutes = require('./src/routes/StudentProfile.route');
 app.use('/api/v1', studentRoutes);
 
+const courseRoutes = require('./src/routes/Courses.route');
+app.use('/api/v1', courseRoutes);
+
+const sectionRoutes = require('./src/routes/Section.route');
+app.use('/api/v1', sectionRoutes);
+
 
 
 app.listen(port, () => {

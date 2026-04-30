@@ -48,8 +48,30 @@ const isTeacher = async (req, res, next) => {
   next();
 };
 
+
+// CHECK IF STUDENT IS ENROLLED IN COURSE
+const isEnrolled = async (req, res, next) => {
+  try {
+    const userId = req.user.id
+    const { courseId } = req.params
+
+    const enrollment = await enrollments.findOne({
+      where: { userId, courseId }
+    })
+
+    if (!enrollment) {
+      return res.status(403).json({ message: 'You are not enrolled in this course!' })
+    }
+
+    next()
+  } catch (error) {
+    res.status(500).json({ messageError: error.message })
+  }
+}
+
 module.exports = {
   authenticateToken,
   isAdmin,
   isTeacher,
+  isEnrolled
 };

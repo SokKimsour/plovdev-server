@@ -7,8 +7,8 @@ const { authenticateToken, isTeacher } = require('../middlewares/authMiddleWare'
 const upload = require("../utils/multer")
 
 router.post('/teacher/profile',  authenticateToken,  upload.single('file'),  createProfile);
-router.put('/teacher/profile', authenticateToken, upload.single('file'), updateTeacherProfile);
-router.get('/teacher/profile',  authenticateToken,  getTeacherProfile);
+router.put('/teacher/me/profile', authenticateToken, upload.single('file'), updateTeacherProfile);
+router.get('/teacher/me/profile',  authenticateToken,  getTeacherProfile);
 router.get('/teacher/profile/:userId',  getTeacherProfileById); // for everyone can access teacher profile
 
 
