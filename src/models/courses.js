@@ -13,6 +13,17 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "teacherId",
         as: "teacher",
       });
+
+      this.hasMany(models.enrollments , {
+        foreignKey : "courseId" ,
+        as : "enrollments"
+      })
+
+      this.hasMany(models.sections , {
+        foreignKey : "courseId" ,
+        as : "sections"
+    })
+
     }
   }
   courses.init(
@@ -28,6 +39,9 @@ module.exports = (sequelize, DataTypes) => {
       what_you_learn: {
         type: DataTypes.TEXT,
         allowNull: true,
+      },
+      archievedAt: {
+        type: DataTypes.DATE,
       },
       thumbnailUrl: DataTypes.STRING,
       price: {
@@ -63,9 +77,16 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: 0,
       },
-      is_published: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
+      status: {
+        type: DataTypes.ENUM(
+          "draft",
+          "pending review",
+          "published",
+          "archived",
+          "rejected",
+        ),
+        allowNull: false,
+        defaultValue: "draft",
       },
       teacherId: {
         type: DataTypes.INTEGER,

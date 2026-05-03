@@ -1,5 +1,5 @@
 "use strict";
-const { Model } = require("sequelize");
+const { Model, STRING } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
   class teacher_profiles extends Model {
     /**
@@ -21,7 +21,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      profilePublicId : {
+      profilePublicId: {
         type: DataTypes.STRING,
         allowNull: true,
       },
@@ -31,10 +31,6 @@ module.exports = (sequelize, DataTypes) => {
       },
       yearsExp: {
         type: DataTypes.INTEGER,
-        allowNull: true,
-      },
-      payoutAccount: {
-        type: DataTypes.STRING,
         allowNull: true,
       },
       commissionRate: {
@@ -51,6 +47,14 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: true,
         defaultValue: 0,
+      },
+      accountName: STRING,
+      accountNumber: STRING,
+      khqr_url: STRING,
+      khqr_publicId: STRING,
+      is_verified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
       },
       userId: {
         type: DataTypes.INTEGER,
