@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const enrollments = require("../models/enrollments");
 
 const authenticateToken = (req, res, next) => {
   try {
@@ -48,6 +49,15 @@ const isTeacher = async (req, res, next) => {
   next();
 };
 
+const isTeacherOrAdmin = async (req, res, next) => {
+  if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
+    return res.status(403).json({
+      message: 'Access denied! Only teacher or admin can access.'
+    })
+  }
+  next()
+}
+
 
 // CHECK IF STUDENT IS ENROLLED IN COURSE
 const isEnrolled = async (req, res, next) => {
@@ -69,9 +79,35 @@ const isEnrolled = async (req, res, next) => {
   }
 }
 
+// CHECK IF STUDENT IS ENROLLED IN COURSE AND FOR TEACHER, ADMIN CAN ACCESS 
+const isEnrolledOrTeacher = async (req, res, next) => {
+  try {
+    // teacher and addmin can always access their own lessons
+    if (req.user.role === 'teacher' || req.user.role === 'admin') {
+      return next()
+    }
+
+    // check if student is enrolled
+    const { courseId } = req.params
+    const enrollment = await enrollments.findOne({
+      where: { userId: req.user.id, courseId }
+    })
+
+    if (!enrollment) {
+      return res.status(403).json({ message: 'You are not enrolled in this course!' })
+    }
+
+    next()
+  } catch (error) {
+    res.status(500).json({ messageError: error.message })
+  }
+}
+
 module.exports = {
   authenticateToken,
   isAdmin,
   isTeacher,
-  isEnrolled
+  isTeacherOrAdmin,
+  isEnrolled ,
+  isEnrolledOrTeacher
 };

@@ -1,19 +1,23 @@
 const express = require('express');
 const router = express.Router();
 
-const {createCourse ,  updateCourse , deleteCourse, publishCourse, viewCourse , viewCourseById , getTeacherCourses}   = require("../controller/Course.controller");
-const { authenticateToken, isTeacher , isAdmin} = require('../middlewares/authMiddleWare');
+const {createCourse ,  updateCourse , deleteCourse, publishCourse, viewCourse , viewCourseById , getTeacherCourses, viewCourseContent}   = require("../controller/Course.controller");
+const { authenticateToken, isTeacher , isAdmin, isEnrolled, isTeacherOrAdmin, isEnrolledOrTeacher} = require('../middlewares/authMiddleWare');
 
 const upload = require("../utils/multer")   
 
-router.post('/course', authenticateToken, isTeacher, upload.single('thumbnail'), createCourse); // teacher
-router.put('/course/:courseId', authenticateToken, isTeacher, upload.single('thumbnail'), updateCourse); // teacher
-router.delete('/course/:courseId', authenticateToken, isTeacher ,isAdmin, deleteCourse); // admin
-router.post('/course/:courseId/publish', authenticateToken, isTeacher, publishCourse);
-router.get('/course/me', authenticateToken, getTeacherCourses)
+// PUBLIC
+router.get('/courses', viewCourse)
+router.get('/course/me', authenticateToken, isTeacherOrAdmin, getTeacherCourses) // must be before /:courseId
+router.get('/course/:courseId', viewCourseById)
 
-router.get('/courses', viewCourse); // student
-router.get('/courses/:courseId', viewCourseById); // student
-// router.get('/courses/:courseId/content', authenticateToken, isEnrolled, viewCourseContent) // student
+// STUDENT
+router.get('/courses/:courseId/content', authenticateToken, isEnrolledOrTeacher, viewCourseContent)
+
+// TEACHER OR ADMIN
+router.post('/course', authenticateToken, isTeacherOrAdmin, upload.single('thumbnail'), createCourse)
+router.put('/course/:courseId', authenticateToken, isTeacherOrAdmin, upload.single('thumbnail'), updateCourse)
+router.delete('/course/:courseId', authenticateToken, isTeacherOrAdmin, deleteCourse)
+router.post('/course/:courseId/publish', authenticateToken, isTeacherOrAdmin, publishCourse)
 
 module.exports = router;

@@ -2,26 +2,31 @@ const { lessons, sections, courses } = require('../models');
 
 const cloudinary = require('../config/cloudinary');
 const { uploadVideoToCloudinary } = require('../utils/uploadToCloudinary');
+const { where } = require('sequelize');
 
 // CREATE LESSON
 const createLesson = async (req, res) => {
   try {
-    const { courseId, sectionId } = req.params;
-    const { title, is_free_preview, position } = req.body;
+    const { sectionId } = req.params;
+    const { title, is_free_preview = false, position } = req.body;
     const teacherId = req.user.id;
 
     if (!title) {
       return res.status(400).json({ message: 'Lesson title is required!' });
     }
 
-    const course = await courses.findOne({ where: { id: courseId, teacherId } });
-    if (!course) {
-      return res.status(404).json({ message: 'Course not found!' });
-    }
-
-    const section = await sections.findOne({ where: { id: sectionId, courseId } });
+    const section = await sections.findOne({ where: { id: sectionId,} });
     if (!section) {
       return res.status(404).json({ message: 'Section not found!' });
+    }
+
+    const course = await courses.findOne({
+    where: req.user.role === 'admin'
+      ? { id: section.courseId }
+      : { id: section.courseId, teacherId }
+    })
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found!' });
     }
 
     let videoUrl = null;
@@ -37,6 +42,9 @@ const createLesson = async (req, res) => {
       videoPublicId = result.public_id;
       duration_secs = Math.round(result.duration || 0);
     }
+
+    // parse position to integer
+    const parsedPosition = position ? parseInt(position) : 0
 
     const lessonCount = await lessons.count({ where: { sectionId } });
     const newPosition = position ?? lessonCount + 1;
@@ -56,11 +64,13 @@ const createLesson = async (req, res) => {
       include: [{
         model: sections,
         as: 'section',
-        attributes: ['id', 'title']
+        include : [{
+          model : courses , as : "course"
+        }]
       }]
     });
 
-    res.status(201).json({ message: 'Lesson created successfully!', leslessonWithSectionson });
+    res.status(201).json({ message: 'Lesson created successfully!', lessonWithSection });
   } catch (error) {
     res.status(500).json({ messageError: error.message });
   }
@@ -69,23 +79,31 @@ const createLesson = async (req, res) => {
 // UPDATE LESSON
 const updateLesson = async (req, res) => {
   try {
-    const { courseId, sectionId, lessonId } = req.params;
+    const { lessonId } = req.params;
     const { title, is_free_preview, position } = req.body;
     const teacherId = req.user.id;
 
-    const course = await courses.findOne({ where: { id: courseId, teacherId } });
-    if (!course) {
-      return res.status(404).json({ message: 'Course not found!' });
+    if (!title) {
+      return res.status(400).json({ message: 'Lesson title is required!' });
     }
 
-    const section = await sections.findOne({ where: { id: sectionId, courseId } });
+    const lesson = await lessons.findOne({ where: { id: lessonId } });
+    if (!lesson) {
+      return res.status(404).json({ message: 'Lesson not found!' });
+    }
+
+    const section = await sections.findOne({ where: { id: lesson.sectionId } });
     if (!section) {
       return res.status(404).json({ message: 'Section not found!' });
     }
 
-    const lesson = await lessons.findOne({ where: { id: lessonId, sectionId } });
-    if (!lesson) {
-      return res.status(404).json({ message: 'Lesson not found!' });
+    const course = await courses.findOne({
+    where: req.user.role === 'admin'
+      ? { id: section.courseId }
+      : { id: section.courseId, teacherId }
+  })
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found!' });
     }
 
     let videoUrl = lesson.videoUrl;
@@ -116,7 +134,14 @@ const updateLesson = async (req, res) => {
       position: position ?? lesson.position
     });
 
-    res.json({ message: 'Lesson updated successfully!', lesson });
+    const lessonWithsection = await lessons.findOne({where : {id : lessonId } } , {include : [
+      {model : sections ,  as : "section" , include : [
+        {model : courses , as : "course"}
+      ]}
+    ]})
+
+
+    res.json({ message: 'Lesson updated successfully!', lessonWithsection });
   } catch (error) {
     res.status(500).json({ messageError: error.message });
   }
@@ -125,17 +150,21 @@ const updateLesson = async (req, res) => {
 // DELETE LESSON
 const deleteLesson = async (req, res) => {
   try {
-    const { courseId, sectionId, lessonId } = req.params;
+    const {sectionId, lessonId } = req.params;
     const teacherId = req.user.id;
-
-    const course = await courses.findOne({ where: { id: courseId, teacherId } });
-    if (!course) {
-      return res.status(404).json({ message: 'Course not found!' });
-    }
 
     const section = await sections.findOne({ where: { id: sectionId, courseId } });
     if (!section) {
       return res.status(404).json({ message: 'Section not found!' });
+    }
+
+    const course = await courses.findOne({
+      where: req.user.role === 'admin'
+        ? { id: section.courseId }
+        : { id: section.courseId, teacherId }
+    })
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found!' });
     }
 
     const lesson = await lessons.findOne({ where: { id: lessonId, sectionId } });
@@ -158,17 +187,24 @@ const deleteLesson = async (req, res) => {
 // GET LESSONS FOR A SECTION
 const getLessons = async (req, res) => {
   try {
-    const { courseId, sectionId } = req.params;
+    const { sectionId } = req.params;
+    console.log("sectionId :" , sectionId)
 
-    const section = await sections.findOne({ where: { id: sectionId, courseId } });
+    const section = await sections.findOne({ where: { id: sectionId } });
     if (!section) {
       return res.status(404).json({ message: 'Section not found!' });
     }
 
     const allLessons = await lessons.findAll({
       where: { sectionId },
-      order: [['position', 'ASC']]
-    });
+      order: [['position', 'ASC']],
+      attributes: { exclude: ['videoUrl', 'videoPublicId'] }, 
+      include: [{                                            
+        model: sections,
+        as: 'section',
+        attributes: ['id', 'title']
+      }]
+    })
 
     res.json({ message: 'Lessons retrieved successfully!', lessons: allLessons });
   } catch (error) {
@@ -176,12 +212,22 @@ const getLessons = async (req, res) => {
   }
 };
 
-// GET LESSON BY ID (teacher only - includes videoUrl)
+// GET LESSON BY ID 
 const getLessonById = async (req, res) => {
   try {
     const { sectionId, lessonId } = req.params;
 
-    const lesson = await lessons.findOne({ where: { id: lessonId, sectionId } });
+    const section = await sections.findByPk(sectionId) ;
+    if (!section) {
+      return res.status(404).json({message : "section not found!"})
+    }
+    
+    const lesson = await lessons.findOne({ where: { id: lessonId, sectionId : section.id } , include : [
+      {model : sections , as : "section" ,  include : [
+        {model : courses , as : "course"}
+      ]}
+    ]});
+
     if (!lesson) {
       return res.status(404).json({ message: 'Lesson not found!' });
     }

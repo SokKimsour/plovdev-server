@@ -1,13 +1,19 @@
 const express = require('express');
 const router = express.Router();
 
-const { createLesson, updateLesson , deleteLesson , getLessons , getLessonById} = require('../controller/Section.controller');
-const { authenticateToken, isTeacher , isAdmin} = require('../middlewares/authMiddleWare');
+const { createLesson, updateLesson , deleteLesson , getLessons , getLessonById} = require('../controller/Lesson.controller');
+const { authenticateToken, isTeacher , isAdmin, isTeacherOrAdmin, isEnrolledOrTeacher} = require('../middlewares/authMiddleWare');
+const upload = require("../utils/multer");
 
-router.post('/course/:courseId/lesson',  authenticateToken , createLesson); // teacher
-router.put('/course/:courseId/lesson/:lessonId',  authenticateToken , updateLesson); // teacher
-router.delete('/course/:courseId/lesson/:lessonId',  authenticateToken , deleteLesson); // teacher
-router.get('/course/:courseId/lessons',  authenticateToken , getLessons); // teacher
-router.get('/course/:courseId/lesson/:lessonId',  authenticateToken , getLessonById); // teacher
+// public
+router.get('/section/:sectionId/lesson', getLessons)
+router.get('/section/:sectionId/lesson/:lessonId', authenticateToken, isEnrolledOrTeacher, getLessonById)
+
+// teacher and admin
+router.post('/section/:sectionId/lesson', authenticateToken, isTeacherOrAdmin, upload.single('video'), createLesson)
+router.put('/lesson/:lessonId', authenticateToken, isTeacherOrAdmin, upload.single('video'), updateLesson)
+router.delete('/lesson/:lessonId', authenticateToken, isTeacherOrAdmin, deleteLesson)
+
+
 
 module.exports = router;

@@ -1,20 +1,14 @@
-const { Users, courses } = require("../models");
+const { Users, courses , sections , lessons } = require("../models");
 const {
   uploadBufferImageToCloudinary,
 } = require("../utils/uploadToCloudinary");
 
 const cloudinary = require("../config/cloudinary");
+const { where } = require("sequelize");
 
 const createCourse = async (req, res) => {
   try {
     const teacherId = req.user.id;
-
-    // CHECK IF USER IS TEACHER
-    if (req.user.role !== "teacher") {
-      return res
-        .status(403)
-        .json({ message: "Only teachers can create a course!" });
-    }
 
     const { title_en, description, price, original_price, what_you_learn } =
       req.body;
@@ -50,13 +44,13 @@ const createCourse = async (req, res) => {
       thumbnailPublicId,
       price: parsedPrice,
       original_price: parsedOriginalPrice,
-      is_published: false,
+      status : "draft" ,
       teacherId,
     });
 
     // FETCH CREATED COURSE WITH TEACHER DATA
     const courseWithTeacher = await courses.findOne({
-      where: { teacherId, title_en },
+      where: {id : course.id },
       include: [
         {
           model: Users,
@@ -147,13 +141,27 @@ const updateCourse = async (req, res) => {
 // COURSE FOR STUDENTS
 const viewCourse = async (req, res) => {
   try {
-    const allCourses = await courses.findAll({
+    const allCourses = await courses.findAll({ 
+      where : {status : 'published'} ,
       include: [
         {
           model: Users,
           as: "teacher",
           attributes: ["id", "fullName", "userName"],
         },
+        {
+          model: sections,
+          as: 'sections',
+          attributes: ['id', 'title', 'position'],
+          include: [
+            {
+              model: lessons,
+              as: 'lessons',
+              attributes: ['id', 'title', 'duration_secs', 'is_free_preview', 'position']
+              // videoUrl excluded for security — only enrolled students get it
+            }
+          ]
+        }
       ],
     });
 
@@ -176,8 +184,27 @@ const viewCourseById = async (req, res) => {
           as: "teacher",
           attributes: ["id", "fullName", "userName"],
         },
+            {
+          model: sections,
+          as: 'sections',
+          attributes: ['id', 'title', 'position'],
+          include: [
+            {
+              model: lessons,
+              as: 'lessons',
+              attributes: ['id', 'title', 'duration_secs', 'is_free_preview', 'position']
+              // videoUrl excluded for security — only enrolled students get it
+            }
+          ]
+        }
       ],
     });
+
+    if (!course) {
+      return res.status(404).json({
+        message : "Course not found!"
+      })
+    }
 
     res.json({ message: "Course retrieved successfully!", course });
   } catch (error) {
@@ -190,11 +217,6 @@ const deleteCourse = async (req, res) => {
   try {
     const teacherId = req.user.id
     const { courseId } = req.params
-
-    // CHECK IF USER IS TEACHER OR ADMIN
-    if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Only teachers or admin can delete a course!' })
-    }
 
     // FIND COURSE
     const course = await courses.findOne({
@@ -228,11 +250,6 @@ const publishCourse = async (req, res) => {
     const teacherId = req.user.id
     const { courseId } = req.params
 
-    // CHECK IF USER IS TEACHER
-    if (req.user.role !== 'teacher') {
-      return res.status(403).json({ message: 'Only teachers can publish a course!' })
-    }
-
     // FIND COURSE
     const course = await courses.findOne({
       where: { id: courseId, teacherId }
@@ -244,13 +261,10 @@ const publishCourse = async (req, res) => {
 
     // TOGGLE PUBLISH STATUS
     await course.update({
-      is_published: !course.is_published
+      status : "pending review"
     })
 
-    res.json({
-      message: course.is_published ? 'Course published successfully!' : 'Course unpublished successfully!',
-      is_published: course.is_published
-    })
+    res.json({ message: 'Course submitted for review successfully!' })
 
   } catch (error) {
     res.status(500).json({ messageError: error.message })
@@ -294,7 +308,7 @@ const viewCourseContent = async (req, res) => {
     const userId = req.user.id
 
     const course = await courses.findOne({
-      where: { id: courseId, is_published: true },
+      where: { id: courseId, status : "published" },
       include: [
         {
           model: Users,

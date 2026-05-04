@@ -1,5 +1,5 @@
 const { sections, lessons, courses } = require('../models');
-
+const cloudinary = require("../config/cloudinary")
 // CREATE SECTION FOR COURSE
 const createSection = async (req, res) => {
   try {
@@ -26,7 +26,7 @@ const createSection = async (req, res) => {
       include: [{
         model: courses,
         as: 'course',
-        attributes: ['id', 'title']
+        attributes: ['id', 'title_en']
       }]
     });
 
@@ -82,7 +82,11 @@ const deleteSection = async (req, res) => {
     const { courseId, sectionId } = req.params;
     const teacherId = req.user.id;
 
-    const course = await courses.findOne({ where: { id: courseId, teacherId } });
+    const course = await courses.findOne({
+        where: req.user.role === 'admin'
+          ? { id: courseId }
+          : { id: courseId, teacherId }
+      })
     if (!course) {
       return res.status(404).json({ message: 'Course not found!' });
     }
@@ -92,8 +96,17 @@ const deleteSection = async (req, res) => {
       return res.status(404).json({ message: 'Section not found!' });
     }
 
-    await lessons.destroy({ where: { sectionId } });
-    await section.destroy();
+    // DELETE LESSON VIDEOS FROM CLOUDINARY FIRST
+    const lessonList = await lessons.findAll({ where: { sectionId } })
+    for (let lesson of lessonList) {
+      if (lesson.videoPublicId) {
+        await cloudinary.uploader.destroy(lesson.videoPublicId, { resource_type: 'video' })
+      }
+    }
+
+    // THEN DELETE LESSONS AND SECTION
+    await lessons.destroy({ where: { sectionId } })
+    await section.destroy()
 
     res.json({ message: 'Section and its lessons deleted successfully!' });
   } catch (error) {
@@ -113,14 +126,16 @@ const getSections = async (req, res) => {
 
     const allSections = await sections.findAll({
       where: { courseId },
-      order: [['position', 'ASC']],
+      order: [
+        ['position', 'ASC'],
+        [{ model: lessons, as: 'lessons' }, 'position', 'ASC']  // ascending
+      ],
       include: [{
         model: lessons,
         as: 'lessons',
-        attributes: ['id', 'title', 'duration_secs', 'is_free_preview', 'position'],
-        order: [['position', 'ASC']]
+        attributes: ['id', 'title', 'duration_secs', 'is_free_preview', 'position']
       }]
-    });
+    })
 
     res.json({ message: 'Sections retrieved successfully!', sections: allSections });
   } catch (error) {
