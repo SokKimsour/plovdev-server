@@ -5,9 +5,9 @@ module.exports = (sequelize, DataTypes) => {
   class Users extends Model {
     static associate(models) {
       // One-to-One: A User can have one Teacher Profile
-      this.hasOne(models.teacher_profiles, {
+      this.hasOne(models.user_profiles, {
         foreignKey: "userId",
-        as: "teacherProfile",
+        as: "userProfile",
       });
 
       this.hasMany(models.OtpCode, {
@@ -18,11 +18,6 @@ module.exports = (sequelize, DataTypes) => {
       this.hasMany(models.refreshTokens, {
         foreignKey: "userId",
         as: "refreshTokens",
-      });
-
-      this.hasOne(models.student_profiles, {
-        foreignKey: "userId",
-        as: "studentProfile",
       });
 
       this.hasMany(models.courses, {

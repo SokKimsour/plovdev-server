@@ -1,10 +1,10 @@
 const cloudinary = require("../config/cloudinary");
-const { Users, OtpCode, teacher_profiles } = require("../models");
+const { Users, OtpCode, user_profiles } = require("../models");
 const {
   uploadBufferImageToCloudinary,
 } = require("../utils/uploadToCloudinary");
 
-const createTeacherProfile = async (req, res) => {
+const createUserProfile = async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -12,16 +12,16 @@ const createTeacherProfile = async (req, res) => {
       return res.status(400).json({ message: "User ID is not found!" });
     }
 
-    const { bio, yearsExp, payoutAccount, commissionRate = 0.4 } = req.body;
+    const { bio, yearsExp, payoutAccount, commissionRate = 0.4 , github_url} = req.body;
 
-    const existingProfile = await teacher_profiles.findOne({
+    const existingProfile = await user_profiles.findOne({
       where: { userId },
     });
 
     if (existingProfile) {
       return res
         .status(400)
-        .json({ message: "Teacher profile already exists for this user!" });
+        .json({ message: "User profile already exists for this user!" });
     }
 
     // UPLOAD PROFILE PICTURE TO CLOUDINARY
@@ -36,17 +36,18 @@ const createTeacherProfile = async (req, res) => {
       profilePublicId = result.public_id;
     }
 
-    await teacher_profiles.create({
+    await user_profiles.create({
       profileUrl,
       profilePublicId,
       bio,
       yearsExp,
       payoutAccount,
       commissionRate,
+      github_url,
       userId,
     });
 
-    const teacherProfile = await teacher_profiles.findOne({
+    const userProfile = await user_profiles.findOne({
       where: { userId },
       include: [
         {
@@ -58,37 +59,37 @@ const createTeacherProfile = async (req, res) => {
     });
 
     res.status(201).json({
-      message: "Teacher profile created successfully!",
-      teacherProfile,
+      message: "User profile created successfully!",
+      userProfile,
     });
   } catch (error) {
     res.status(500).json({ messageError: error.message });
   }
 };
 
-// UPDATE TEACHER PROFILE
-const updateTeacherProfile = async (req, res) => {
+// UPDATE User PROFILE
+const updateUserProfile = async (req, res) => {
   try {
     const userId = req.user.id;
 
     // CHECK IF PROFILE EXISTS
-    const teacherProfile = await teacher_profiles.findOne({
+    const userProfile = await user_profiles.findOne({
       where: { userId },
     });
-    if (!teacherProfile) {
-      return res.status(404).json({ message: "Teacher profile not found!" });
+    if (!userProfile) {
+      return res.status(404).json({ message: "User profile not found!" });
     }
 
-    const { bio, yearsExp, payoutAccount } = req.body;
+    const { bio, yearsExp, payoutAccount , github_url} = req.body;
 
     // HANDLE PROFILE IMAGE UPDATE
-    let profileUrl = teacherProfile.profileUrl;
-    let profilePublicId = teacherProfile.profilePublicId;
+    let profileUrl = userProfile.profileUrl;
+    let profilePublicId = userProfile.profilePublicId;
 
     if (req.file) {
       // DELETE OLD IMAGE FROM CLOUDINARY FIRST
-      if (teacherProfile.profilePublicId) {
-        await cloudinary.uploader.destroy(teacherProfile.profilePublicId);
+      if (userProfile.profilePublicId) {
+        await cloudinary.uploader.destroy(userProfile.profilePublicId);
       }
 
       // UPLOAD NEW IMAGE
@@ -101,29 +102,30 @@ const updateTeacherProfile = async (req, res) => {
     }
 
     // UPDATE PROFILE
-    await teacherProfile.update({
+    await userProfile.update({
       bio,
       yearsExp,
       payoutAccount,
       profileUrl,
       profilePublicId,
+      github_url
     });
 
     res.json({
-      message: "Teacher profile updated successfully!",
-      teacherProfile,
+      message: "User profile updated successfully!",
+      userProfile,
     });
   } catch (error) {
     res.status(500).json({ messageError: error.message });
   }
 };
 
-// GET TEACHER PROFILE
-const getTeacherProfile = async (req, res) => {
+// GET User PROFILE
+const getUserProfile = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const teacherProfile = await teacher_profiles.findOne({
+    const userProfile = await user_profiles.findOne({
       where: { userId },
       include: [
         {
@@ -134,34 +136,34 @@ const getTeacherProfile = async (req, res) => {
       ],
     });
 
-    if (!teacherProfile) {
-      return res.status(404).json({ message: "Teacher profile not found!" });
+    if (!userProfile) {
+      return res.status(404).json({ message: "User profile not found!" });
     }
 
     res.json({
-      message: "Teacher profile retrieved successfully!",
-      teacherProfile,
+      message: "User profile retrieved successfully!",
+      userProfile,
     });
   } catch (error) {
     res.status(500).json({ messageError: error.message });
   }
 };
 
-const getTeacherProfileById = async (req, res) => {
+const getUserProfileById = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const teacherProfile = await teacher_profiles.findOne({
+    const userProfile = await user_profiles.findOne({
       where: { userId },
     });
 
-    if (!teacherProfile) {
-      return res.status(404).json({ message: "Teacher profile not found!" });
+    if (!userProfile) {
+      return res.status(404).json({ message: "User profile not found!" });
     }
 
     res.json({
-      message: "Teacher profile retrieved successfully!",
-      teacherProfile,
+      message: "User profile retrieved successfully!",
+      userProfile,
     });
   } catch (error) {
     res.status(500).json({ messageError: error.message });
@@ -169,8 +171,8 @@ const getTeacherProfileById = async (req, res) => {
 };
 
 module.exports = {
-  createProfile: createTeacherProfile,
-  updateTeacherProfile,
-  getTeacherProfile,
-  getTeacherProfileById,
+  createProfile: createUserProfile,
+  updateUserProfile,
+  getUserProfile,
+  getUserProfileById,
 };

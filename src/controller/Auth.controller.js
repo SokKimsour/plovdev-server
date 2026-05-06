@@ -6,7 +6,7 @@ const validator = require("validator");
 
 const { generateUsername, generateOtp } = require("../utils/generateForUser");
 const sendEmail = require("../utils/sendEmail");
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 
 // REGISTER
 const register = async (req, res) => {
@@ -71,7 +71,7 @@ const register = async (req, res) => {
       email,
       password: hashPassword,
       gender,
-      role: "student",
+      role: "teacher",
     });
 
     await OtpCode.create({
@@ -182,6 +182,56 @@ const logout = async (req, res) => {
     res.status(500).json({ messageError: error.message });
   }
 };
+
+
+const changePassword = async (req , res) => {
+  try {
+   //  use id from JWT 
+    const userId = req.user.id ;
+    const {oldPassword ,  newPassword } = req.body ;
+
+   const user = await Users.findByPk(userId) ;
+   if (!user) {
+    return res.status(404).json({ message : "User not found!"})
+   }
+
+   // VERIFY OLD PASSWORD
+   const isMatch = await bcrypt.compare(oldPassword.trim() , user.password)
+   if (!isMatch) {
+    return res.status(404).json({message : "Incorrect old password!"})
+   }
+
+   // VALIDATE THE PASSWORD
+    if (
+      !validator.isStrongPassword(newPassword, {
+        minLength: 8,
+        minUppercase: 0,
+        minLowercase: 0,
+        minNumbers: 0,
+        minSymbols: 0,
+      })
+    ) {
+      return res.status(400).json({
+        message:
+          "Weak password: at least 8 length, at least 1 uppercase and at least 1 lowercase",
+      });
+    }
+
+    // UPDATE PASSWORD
+    const hashPassword = await bcrypt.hash(newPassword.trim() ,10) ;
+    await user.update({password : hashPassword} ) ;
+
+    // revoke the token to secure the user account
+    await refreshTokens.update({is_revoked : true}, {where : {userId}})
+
+    res.json({
+      message : "Password changed successfully!"
+    })
+
+  } catch (error) {
+    res.status(500).json({ messageError: error.message })
+  }
+}
 
 const forgotPassword = async (req, res) => {
   try {
@@ -385,6 +435,7 @@ module.exports = {
   refreshToken,
   getMe,
   forgotPassword,
+  changePassword ,
   verifyForgotOtp,
   resetPassword,
 };

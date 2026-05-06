@@ -17,9 +17,6 @@ app.use('/api/v1', otpRoutes);
 const teacherRoutes = require('./src/routes/TeacherProfile.route');
 app.use('/api/v1', teacherRoutes);
 
-const studentRoutes = require('./src/routes/StudentProfile.route');
-app.use('/api/v1', studentRoutes);
-
 const courseRoutes = require('./src/routes/Courses.route');
 app.use('/api/v1', courseRoutes);
 
