@@ -1,5 +1,3 @@
-
-
 # PlovDev Backend Context
 
 ## CONTEXT
@@ -18,7 +16,7 @@ June 19, 2026 — Deploy link and repository submission
 - Authentication: JWT (access token 15m, refresh token 7d)
 - File Storage: Cloudinary
 - Email: Nodemailer + Gmail App Password
-- Payment: ABA PayWay (QR scan)    
+- Payment: ABA PayWay (QR scan)
 - Username generation: slugify library
 
 ## Environment Variables
@@ -47,18 +45,25 @@ backend/
 ├── controllers/
 │   ├── auth.controller.js
 │   ├── course.controller.js
-│   ├── teacherProfile.controller.js
-│   └── studentProfile.controller.js
+│   ├── section.controller.js
+│   ├── lesson.controller.js
+│   ├── tag.controller.js
+│   ├── enrollment.controller.js
+│   ├── payment.controller.js
+│   ├── progress.controller.js
+│   ├── quiz.controller.js
+│   ├── certificate.controller.js
+│   ├── review.controller.js
+│   ├── qa.controller.js
+│   ├── job.controller.js
+│   ├── admin.controller.js
+│   └── userProfile.controller.js
 ├── middlewares/
-│   ├── authenticateToken.js
-│   ├── isTeacher.js
-│   ├── isAdmin.js
-│   ├── isStudent.js
-│   └── isTeacherOrAdmin.js
+│   ├── authMiddleware.js
+│   └── rateLimits.js
 ├── models/
 │   ├── users.js
-│   ├── teacher_profiles.js
-│   ├── student_profiles.js
+│   ├── user_profiles.js
 │   ├── otp_codes.js
 │   ├── refresh_tokens.js
 │   ├── courses.js
@@ -72,49 +77,65 @@ backend/
 │   ├── payments.js
 │   ├── teacher_payouts.js
 │   ├── lesson_progress.js
+│   ├── course_progress.js
 │   ├── quiz_attempts.js
 │   ├── certificates.js
-│   ├── course_progress.js
 │   ├── reviews.js
 │   ├── qa_posts.js
 │   ├── qa_replies.js
-│   ├── qa_upvotes.js
+│   ├── wishlists.js
 │   └── job_listings.js
 ├── routes/
 │   ├── auth.routes.js
 │   ├── course.routes.js
-│   ├── teacherProfile.routes.js
-│   └── studentProfile.routes.js
+│   ├── section.routes.js
+│   ├── lesson.routes.js
+│   ├── tag.routes.js
+│   ├── enrollment.routes.js
+│   ├── payment.routes.js
+│   ├── progress.routes.js
+│   ├── quiz.routes.js
+│   ├── certificate.routes.js
+│   ├── review.routes.js
+│   ├── qa.routes.js
+│   ├── job.routes.js
+│   ├── admin.routes.js
+│   └── userProfile.routes.js
 ├── utils/
 │   ├── generateForUser.js
 │   ├── multer.js
 │   ├── sendEmail.js
-│   ├── uploadToCloudinary.js
-│   
+│   └── uploadToCloudinary.js
 └── migrations/
 
 ---
 
-## Database Tables (24 tables)
+## Database Tables (23 tables)
 
-### Group 1 — Users & Auth (5 tables)
+### Group 1 — Users & Auth (4 tables)
 
 **users**
 id, fullName, userName (auto generated from fullName using slugify),
-email, phoneNumber, password (bcrypt hashed),
+email, phoneNumber, password (bcrypt hashed, nullable for OAuth),
 gender (male/female/other), is_verified (default false),
 is_active (default true), is_blocked (default false),
-role (admin/student/teacher), createdAt, updatedAt
+role (admin/user default user),
+google_id (unique, nullable),
+auth_provider (local/google default local),
+createdAt, updatedAt
 
-**teacher_profiles** — one-to-one with users
-id, profileUrl, profile_publicId, bio, yearsExp,
-commissionRate (default 0.40), avgRating (default 0),
-total_students (default 0), is_verified (default false),
-account_name, account_number, khqr_url, khqr_public_id,
-userId (unique FK → users.id), createdAt, updatedAt
-
-**student_profiles** — one-to-one with users
-id, profileUrl, profile_publicId, bio, github_url,
+**user_profiles** — one-to-one with users (merged teacher + student profile)
+id, profileUrl, profile_publicId, bio,
+yearsExp (nullable — only filled by teachers),
+github_url (nullable — only filled by students),
+commissionRate (default 0.40),
+avgRating (default 0),
+total_students (default 0),
+is_verified (default false — admin verifies teacher),
+account_name (nullable — teacher payout info),
+account_number (nullable — teacher payout info),
+khqr_url (nullable — teacher KHQR image),
+khqr_public_id (nullable — for Cloudinary deletion),
 userId (unique FK → users.id), createdAt, updatedAt
 
 **otp_codes**
@@ -122,7 +143,8 @@ id, code, expireAt, is_used (default false),
 userId (FK → users.id), createdAt, updatedAt
 
 **refresh_tokens**
-id, token (unique), expires_at, is_revoked (default false),
+id, token (unique), expires_at,
+is_revoked (default false),
 userId (FK → users.id), createdAt, updatedAt
 
 ---
@@ -130,13 +152,18 @@ userId (FK → users.id), createdAt, updatedAt
 ### Group 2 — Courses & Content (7 tables)
 
 **courses**
-id, title_en, description, what_you_learn, prerequisites,
-language (km/en), thumbnailUrl, thumbnailPublicId,
+id, title_en, description, what_you_learn (stored as HTML from TipTap editor),
+thumbnailUrl, thumbnailPublicId,
 price (default 0), originalPrice (default 0),
-is_best_seller (default false), avg_rating (default 0),
-totalStudent (default 0), totalReview (default 0),
+is_best_seller (default false),
+avg_rating (default 0),
+totalStudent (default 0),
+totalReview (default 0),
+total_duration_secs (default 0 — sum of all lesson durations),
 status (draft/pending_review/published/rejected/archived default draft),
-archived_at, teacherId (FK → users.id), createdAt, updatedAt
+rejected_reason (text, nullable — admin fills when rejecting),
+archived_at (nullable),
+teacherId (FK → users.id), createdAt, updatedAt
 
 **sections**
 id, title, position,
@@ -156,7 +183,7 @@ tagId (FK → tags.id), createdAt, updatedAt
 
 **quizzes**
 id, title, courseId (FK → courses.id),
-sectionId (nullable FK → sections.id — null means final quiz),
+sectionId (nullable FK → sections.id — null means final course quiz),
 createdAt, updatedAt
 
 **quiz_questions**
@@ -176,8 +203,10 @@ createdAt, updatedAt
 
 **payments**
 id, amount, commission (40%), teacherPayout (60%),
-status (pending/failed/success), transaction_id (unique),
-paid_at, is_refunded (default false), refundedAt,
+status (pending/failed/success),
+transaction_id (unique), paid_at,
+payment_method (e.g. ABA),
+is_refunded (default false), refundedAt (nullable),
 userId (FK → users.id), courseId (FK → courses.id),
 createdAt, updatedAt
 
@@ -196,6 +225,14 @@ id, is_complete (default false), last_position_secs, completedAt,
 userId (FK → users.id), lessonId (FK → lessons.id),
 createdAt, updatedAt
 
+**course_progress**
+id, total_lessons, completed_lessons,
+percentage (default 0), is_completed (default false),
+last_accessed, completed_at,
+lastLessonId (nullable FK → lessons.id — tracks resume point),
+userId (FK → users.id), courseId (FK → courses.id),
+createdAt, updatedAt
+
 **quiz_attempts**
 id, answers (JSONB), passed, attempt_at,
 userId (FK → users.id), quizId (FK → quizzes.id),
@@ -203,12 +240,6 @@ createdAt, updatedAt
 
 **certificates**
 id, verification_id (unique), issued_at,
-userId (FK → users.id), courseId (FK → courses.id),
-createdAt, updatedAt
-
-**course_progress**
-id, total_lessons, completed_lessons, percentage (default 0),
-is_completed (default false), last_accessed, completed_at,
 userId (FK → users.id), courseId (FK → courses.id),
 createdAt, updatedAt
 
@@ -231,24 +262,67 @@ id, body,
 postId (FK → qa_posts.id), userId (FK → users.id),
 createdAt, updatedAt
 
-**qa_upvotes**
-id, postId (nullable FK → qa_posts.id),
-replyId (nullable FK → qa_replies.id),
-userId (FK → users.id), createdAt, updatedAt
+**wishlists** — junction table
+id, userId (FK → users.id), courseId (FK → courses.id),
+unique constraint on (userId, courseId),
+createdAt, updatedAt
 
 ---
 
 ### Group 6 — Job Board (1 table)
 
 **job_listings**
-id, company_name, hr_name, title,
-job_type (full-time/part-time/internship),
-location, salary_min, salary_max, skills (JSONB),
-apply_url, source (form/telegram_bot/admin),
-is_approved (default false), applicants (default 0),
-status (pending_review/active/rejected default pending_review),
-rejectedAt, publishedAt, expires_at,
-createdAt, updatedAt
+id, company_name, company_logo (nullable — Cloudinary URL),
+hr_name, title,
+emp_type (full-time/part-time/internship),
+description (text),
+location, salary_min, salary_max,
+skills (JSONB), contact_email,
+source (form/telegram_bot/admin),
+open_positions (default 1 — PAX),
+status (pending_review/published/rejected default pending_review),
+rejectedAt (nullable), publishedAt (nullable),
+expires_at, createdAt, updatedAt
+
+---
+
+## Auth Flow
+
+### Local (email/password)
+Register → OTP sent to email → verify OTP → logged in
+Login → check auth_provider → check is_active/is_blocked → compare password → check is_verified → generate tokens
+Forgot password → OTP sent → verify OTP → reset password
+
+### Google OAuth
+Click "Sign in with Google" → Google redirects back → OTP sent → verify OTP → logged in
+auth_provider = 'google', password = null, is_verified = true automatically
+
+### Login Order of Checks
+```javascript
+1. User exists?              → if not → 400 Invalid email or password
+2. auth_provider = 'google'? → if yes → 400 Use Google login
+3. is_active = false?        → if yes → 403 Account suspended
+4. is_blocked = true?        → if yes → 403 Account suspended
+5. password correct?         → if not → 400 Invalid email or password
+6. is_verified = true?       → if not → 403 Please verify your email
+7. Generate access token + refresh token
+8. Cleanup expired/revoked refresh tokens for this user
+9. Save new refresh token
+10. Return tokens
+```
+
+### Token Cleanup on Login
+```javascript
+await refreshTokens.destroy({
+  where: {
+    userId: user.id,
+    [Op.or]: [
+      { expires_at: { [Op.lt]: new Date() } },
+      { is_revoked: true }
+    ]
+  }
+})
+```
 
 ---
 
@@ -265,18 +339,15 @@ POST /api/v1/auth/refresh
 POST /api/v1/auth/forgot-password
 POST /api/v1/auth/verify-forgot-otp
 POST /api/v1/auth/reset-password
+GET  /api/v1/auth/google
+GET  /api/v1/auth/google/callback
 
-### Teacher Profile
-POST /api/v1/teacher/profile
-PUT  /api/v1/teacher/profile
-GET  /api/v1/teacher/profile
-GET  /api/v1/teacher/profile/:userId
-
-### Student Profile
-POST /api/v1/student/profile
-PUT  /api/v1/student/profile
-GET  /api/v1/student/profile
-GET  /api/v1/student/profile/:userId
+### User Profile
+POST  /api/v1/users/profile
+PUT   /api/v1/users/profile
+GET   /api/v1/users/profile
+GET   /api/v1/users/profile/:userId
+PATCH /api/v1/users/me/password
 
 ### Courses
 GET    /api/v1/courses
@@ -284,7 +355,7 @@ GET    /api/v1/courses/:courseId
 POST   /api/v1/courses
 PUT    /api/v1/courses/:courseId
 DELETE /api/v1/courses/:courseId
-PUT    /api/v1/courses/:courseId/publish
+POST   /api/v1/courses/:courseId/submit
 GET    /api/v1/courses/me
 
 ---
@@ -302,6 +373,7 @@ POST   /api/v1/sections/:sectionId/lessons
 GET    /api/v1/sections/:sectionId/lessons
 PUT    /api/v1/lessons/:lessonId
 DELETE /api/v1/lessons/:lessonId
+GET    /api/v1/lessons/:lessonId
 
 ### Tags
 GET    /api/v1/tags
@@ -344,21 +416,40 @@ POST   /api/v1/lessons/:lessonId/qa
 POST   /api/v1/qa/:postId/replies
 PUT    /api/v1/qa/:postId/upvote
 
+### Wishlists
+POST   /api/v1/wishlists/:courseId
+DELETE /api/v1/wishlists/:courseId
+GET    /api/v1/wishlists/me
+
 ### Job Board
 GET    /api/v1/jobs
 GET    /api/v1/jobs/:jobId
 POST   /api/v1/jobs
-PUT    /api/v1/admin/jobs/:jobId/approve
+PATCH  /api/v1/jobs/:jobId/apply
+
+### Admin — Users
+GET    /api/v1/admin/users
+PATCH  /api/v1/admin/users/:userId/block
+PATCH  /api/v1/admin/users/:userId/unblock
+
+### Admin — Courses
+GET    /api/v1/admin/courses
+PATCH  /api/v1/admin/courses/:courseId/publish
+PATCH  /api/v1/admin/courses/:courseId/reject
+
+### Admin — Payouts
+GET    /api/v1/admin/payouts
+PATCH  /api/v1/admin/payouts/:payoutId/approve
+PATCH  /api/v1/admin/payouts/:payoutId/reject
+
+### Admin — Job Board
+GET    /api/v1/admin/jobs
+PATCH  /api/v1/admin/jobs/:jobId/publish
+PATCH  /api/v1/admin/jobs/:jobId/reject
 DELETE /api/v1/admin/jobs/:jobId
 
-### Admin
-GET    /api/v1/admin/users
-PUT    /api/v1/admin/users/:userId/block
-GET    /api/v1/admin/payouts
-PUT    /api/v1/admin/payouts/:payoutId/approve
-PUT    /api/v1/admin/payouts/:payoutId/reject
-GET    /api/v1/admin/courses
-PUT    /api/v1/admin/courses/:courseId/approve
+### Teacher Dashboard
+GET    /api/v1/teachers/me/dashboard
 
 ---
 
@@ -370,12 +461,21 @@ PUT    /api/v1/admin/courses/:courseId/approve
 - Always store both values in payments table
 
 ### Course Status Flow
-draft → pending_review → published
-→ rejected
-published → archived
+draft → (teacher submits) → pending_review → (admin approves) → published
+→ (admin rejects)  → rejected → (teacher edits) → draft
+published → (teacher archives) → archived
+- Only published courses visible to students
+- Teacher submits via POST /api/v1/courses/:courseId/submit
+- Admin approves via PATCH /api/v1/admin/courses/:courseId/publish
+- Admin rejects via PATCH /api/v1/admin/courses/:courseId/reject (must include rejected_reason)
+
+### Who Can Create Courses
+- Any user with role = 'user' can create a course
+- No special role needed — platform is open to teachers
+- Course goes through admin review before publishing
 
 ### Enrollment
-- Free courses (price = 0) → enroll immediately
+- Free courses (price = 0) → enroll immediately, no payment needed
 - Paid courses → need confirmed payment first
 - Create course_progress row on enrollment
 - Student cannot enroll twice in same course
@@ -384,28 +484,43 @@ published → archived
 - percentage = (completed_lessons / total_lessons) * 100
 - When percentage = 100 → set is_completed = true
 - Update last_position_secs every time student watches
+- Update lastLessonId on course_progress every time lesson is watched
+- Update last_accessed on course_progress on every lesson watch
 
 ### Quiz
 - Passing score = 70% hardcoded in backend
-- Compare student answer against correct_answer field
+- Compare student answers against correct_answer field
 - After passing final quiz → check all lessons complete → auto generate certificate
 
 ### Certificate
 - Only generate when ALL lessons complete AND final quiz passed
-- Always generate unique verification_id
+- Always generate unique verification_id (use UUID or nanoid)
 - Store issued_at timestamp
 
 ### Teacher Payout
-- Calculated monthly by system
+- Calculated monthly by admin
 - Admin manually transfers to teacher ABA account
-- Admin uploads receipt as proof
+- Admin uploads receipt_url as proof
 - Admin clicks Approve → status changes to paid
-- Teacher downloads receipt from Payment History
+- Teacher downloads receipt from payment history
 
-### Job Board
-- All jobs start as pending_review
-- Admin approves → status active → visible to students
-- Admin rejects → status rejected
+### Job Board Flow
+HR posts job (via form or Telegram bot)
+→ status: pending_review
+→ Admin reviews and clicks Publish → status: published → visible to students
+→ Admin rejects → status: rejected
+- Apply Now button opens mailto: contact_email (no tracking needed)
+- Telegram bot calls POST /api/v1/jobs with source: 'telegram_bot'
+
+### Wishlist
+- User can add/remove courses from wishlist
+- Unique constraint on (userId, courseId) prevents duplicates
+- Shown in My Learning → Favorite tab
+
+### Refresh Token
+- On logout → set is_revoked = true (do NOT delete)
+- On login → delete all expired or revoked tokens for that user first
+- Tokens expire after 7 days
 
 ---
 
@@ -419,7 +534,7 @@ res.status(500).json({ messageError: error.message })
 ### Success Response
 ```javascript
 res.status(200).json({ message: 'Success', data })
-res.status(201).json({ message: 'Created', data })
+res.status(201).json({ message: 'Created successfully', data })
 ```
 
 ### Migration Commands
@@ -427,18 +542,20 @@ res.status(201).json({ message: 'Created', data })
 npx sequelize-cli migration:generate --name migration-name
 npm run migrate
 npx sequelize-cli db:migrate:undo
+npx sequelize-cli db:migrate:undo:all
 ```
 
 ### Model Naming
-- Class: PascalCase → User, TeacherProfile, Course
-- modelName: PascalCase → 'User', 'TeacherProfile'
-- tableName: snake_case plural → 'users', 'teacher_profiles'
+- Class: PascalCase → User, UserProfile, Course
+- modelName: PascalCase → 'User', 'UserProfile'
+- tableName: snake_case plural → 'users', 'user_profiles'
 
 ### Cloudinary Folders
 - Profile pictures → plovdev/profiles
 - Course thumbnails → plovdev/thumbnails
 - Lesson videos → plovdev/videos
 - Receipts → plovdev/receipts
+- KHQR images → plovdev/profiles
 
 ### Number Parsing from form-data
 ```javascript
@@ -447,17 +564,19 @@ const parsedPosition = position ? parseInt(position) : 1
 ```
 
 ### Create Then Fetch Pattern
-Sequelize create does not support include. Always fetch after create:
 ```javascript
 await Model.create({ ...data })
-const result = await Model.findOne({ where: { id }, include: [...] })
+const result = await Model.findOne({
+  where: { id: newRecord.id },
+  include: [...]
+})
 ```
 
 ### Ownership Check
 ```javascript
-// teacher owns resource
+// user owns resource
 const resource = await Model.findOne({
-  where: { id: resourceId, teacherId: req.user.id }
+  where: { id: resourceId, userId: req.user.id }
 })
 
 // admin can access any resource
@@ -468,372 +587,19 @@ const resource = await Model.findOne({
 })
 ```
 
-## RULES
-
-# PlovDev Backend Rules
-
-## IMPORTANT — Read This First
-Before writing any code, always read these files:
-1. CONTEXT.md
-2. Any existing controller file related to the task
-3. Any model file related to the task
-
-Never assume anything about the project. Always read the files first.
-When finish the flow of each endpoints for one table, you have to tell me so i have to review or read to understand the code.
-Payments and Enrollment tables , endpoint I will handle it.
-
----
-
-## Tech Stack
-- Runtime: Node.js
-- Framework: Express.js
-- ORM: Sequelize
-- Database: PostgreSQL (running in Docker)
-- Authentication: JWT
-- File Storage: Cloudinary
-- Email: Nodemailer
-
----
-
-## Project Structure
-src/
-├── config/
-│   ├── cloudinary.js
-│   └── db.js
-├── controllers/
-├── middlewares/
-├── models/
-├── routes/
-├── utils/
-└── migrations/
-
----
-
-## Database Rules
-
-### Migration Commands
-- Generate migration: `npx sequelize-cli migration:generate --name migration-name`
-- Run migration: `npm run migrate`
-- Undo migration: `npx sequelize-cli db:migrate:undo`
-- Undo all: `npx sequelize-cli db:migrate:undo:all`
-
-### Migration Rules
-- NEVER use `model: ModelName` inside migrations — always use `model: 'TableName'` as a string
-- Always add `onDelete: 'CASCADE'` and `onUpdate: 'CASCADE'` on foreign keys
-- Always add `allowNull: false` on required fields
-- Always add `unique: true` on unique fields
-- Table names are plural and snake_case: `users`, `teacher_profiles`, `course_tags`
-- Always include `createdAt` and `updatedAt` in every migration
-
-### Migration Template
-```javascript
-'use strict';
-
-module.exports = {
-  async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('table_name', {
-      id: {
-        allowNull: false,
-        autoIncrement: true,
-        primaryKey: true,
-        type: Sequelize.INTEGER
-      },
-      // columns here
-      createdAt: {
-        allowNull: false,
-        type: Sequelize.DATE
-      },
-      updatedAt: {
-        allowNull: false,
-        type: Sequelize.DATE
-      }
-    })
-  },
-
-  async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('table_name')
-  }
-}
-```
-
-### Model Rules
-- Model class name: PascalCase (`User`, `TeacherProfile`, `Course`)
-- modelName: PascalCase (`'User'`, `'TeacherProfile'`)
-- tableName: snake_case plural (`'users'`, `'teacher_profiles'`)
-- Always define `tableName` explicitly in model
-- Always define associations in `static associate(models)`
-- Use `this` instead of class name inside associate
-- Never return `password` field — always exclude it
-- One-to-one relationships must have `unique: true` on foreign key
-
-### Model Template
-```javascript
-'use strict';
-const { Model } = require('sequelize');
-
-module.exports = (sequelize, DataTypes) => {
-  class ModelName extends Model {
-    static associate(models) {
-      // define associations here
-    }
-  }
-
-  ModelName.init({
-    // columns here (no need for id, createdAt, updatedAt — Sequelize adds automatically)
-  }, {
-    sequelize,
-    modelName: 'ModelName',
-    tableName: 'table_name',
-  })
-
-  return ModelName
-}
-```
-
----
-
-## API Rules
-
-### Route Naming
-- All routes prefixed with `/api/v1`
-- Use plural nouns: `/courses` not `/course`
-- Use kebab-case: `/teacher-profiles` not `/teacherProfiles`
-- Use nested routes for relationships: `/courses/:courseId/sections`
-
-### HTTP Methods
-- `GET` — retrieve data
-- `POST` — create new data
-- `PUT` — replace entire resource
-- `PATCH` — update partial resource
-- `DELETE` — delete resource
-
-### Middleware Order
-```javascript
-router.method('/path', authenticateToken, isRole, upload.single('field'), controller)
-```
-
-### Available Middlewares
-- `authenticateToken` — verifies JWT token, adds `req.user`
-- `isTeacher` — checks `req.user.role === 'teacher'`
-- `isAdmin` — checks `req.user.role === 'admin'`
-- `isStudent` — checks `req.user.role === 'student'`
-- `isTeacherOrAdmin` — checks teacher or admin role
-
----
-
-## Controller Rules
-
-### Controller Structure
-Every controller must follow this exact pattern:
-
-```javascript
-const functionName = async (req, res) => {
-  try {
-    // 1. Get user info from JWT
-    const userId = req.user.id
-
-    // 2. Check role if needed (if not using middleware)
-
-    // 3. Get params and body
-    const { param } = req.params
-    const { field1, field2 } = req.body
-
-    // 4. Validate required fields
-    if (!field1) {
-      return res.status(400).json({ message: 'Field1 is required!' })
-    }
-
-    // 5. Business logic
-
-    // 6. Return response
-    res.status(200).json({
-      message: 'Success message',
-      data: result
-    })
-
-  } catch (error) {
-    res.status(500).json({ messageError: error.message })
-  }
-}
-```
-
-### Response Format
-```javascript
-// Success
-res.status(200).json({ message: 'Success', data })
-res.status(201).json({ message: 'Created successfully', data }) // create
-
-// Error
-res.status(400).json({ message: 'Bad request message' })       // validation
-res.status(401).json({ message: 'Unauthorized!' })              // no token
-res.status(403).json({ message: 'Access denied!' })             // wrong role
-res.status(404).json({ message: 'Resource not found!' })        // not found
-res.status(500).json({ messageError: error.message })           // server error
-```
-
-### Ownership Check
-Teacher can only modify their own resources:
-```javascript
-const resource = await Model.findOne({
-  where: { id: resourceId, teacherId: req.user.id }
-})
-if (!resource) {
-  return res.status(404).json({ message: 'Resource not found!' })
-}
-```
-
-Admin can modify any resource:
-```javascript
-const resource = await Model.findOne({
-  where: req.user.role === 'admin'
-    ? { id: resourceId }
-    : { id: resourceId, teacherId: req.user.id }
-})
-```
-
----
-
-## Cloudinary Rules
-
-### Upload Image
-```javascript
-const result = await uploadBufferImageToCloudinary(req.file.buffer, {
-  folder: 'plovdev/profiles',    // or thumbnails
-  resource_type: 'image'
-})
-const imageUrl = result.secure_url
-const imagePublicId = result.public_id
-```
-
-### Upload Video
-```javascript
-const result = await uploadVideoToCloudinary(req.file.buffer, {
-  folder: 'plovdev/videos'
-})
-const videoUrl = result.secure_url
-const videoPublicId = result.public_id
-```
-
-### Delete File
-```javascript
-if (resource.publicId) {
-  await cloudinary.uploader.destroy(resource.publicId)
-}
-```
-
-### Folder Structure
-- Profile pictures: `plovdev/profiles`
-- Course thumbnails: `plovdev/thumbnails`
-- Lesson videos: `plovdev/videos`
-- Receipts → plovdev/receipts
-- KHQR images → plovdev/profiles
-
-### Always Save PublicId
-Every table that stores a Cloudinary URL must also store the `publicId` for deletion.
-
----
-
-## Sequelize Query Rules
-
-### Always exclude password
+### Always Exclude Password
 ```javascript
 attributes: { exclude: ['password'] }
-// or specify exact fields
-attributes: ['id', 'fullName', 'userName', 'email']
 ```
 
-### Include associations
+### total_duration_secs Update
+When a lesson is created, updated, or deleted — always update courses.total_duration_secs:
 ```javascript
-include: [{
-  model: Users,
-  as: 'user',           // must match 'as' in model association
-  attributes: ['id', 'fullName', 'userName']
-}]
-```
-
-### findOne vs findByPk
-```javascript
-// use findByPk when you have the primary key
-const course = await courses.findByPk(courseId)
-
-// use findOne when you have other conditions
-const course = await courses.findOne({ where: { teacherId, id: courseId } })
-```
-
-### Create then fetch pattern
-Sequelize `create` does not support `include`. Always fetch after create:
-```javascript
-await Model.create({ ...data })
-
-const result = await Model.findOne({
-  where: { id: newRecord.id },
-  include: [...]
+const totalDuration = await lessons.sum('duration_secs', {
+  include: [{ model: sections, as: 'section', where: { courseId } }]
 })
+await courses.update({ total_duration_secs: totalDuration }, { where: { id: courseId } })
 ```
-
-### Parse numbers from form-data
-```javascript
-const parsedPrice = price ? parseFloat(price) : 0
-const parsedPosition = position ? parseInt(position) : 1
-```
-
----
-
-## File Upload Rules
-
-### Multer setup
-```javascript
-const upload = require('../utils/multer')
-
-// single file
-upload.single('fieldName')
-
-// field name must match Postman key name
-```
-
-### When to use upload middleware
-- Profile picture update → `upload.single('file')`
-- Course thumbnail → `upload.single('thumbnail')`
-- Lesson video → `upload.single('video')`
-
----
-
-## Important Business Rules
-
-### Commission
-- Platform takes 40% commission
-- Teacher receives 60%
-- Always store both values in payments table
-
-### Course Status Flow
-- New courses start as status: 'draft'
-- Teacher submits for review → status: 'pending_review'
-- Admin approves → status: 'published'
-- Admin rejects → status: 'rejected'
-- Teacher can archive published course → status: 'archived'
-- Only published courses show to students
-
-### Enrollment
-- Free courses (price = 0) → enroll immediately
-- Paid courses → need confirmed payment first
-- Create `course_progress` row on enrollment
-- Student cannot enroll twice in same course
-
-### Progress
-- `percentage = (completed_lessons / total_lessons) * 100`
-- When `percentage = 100` → set `is_completed = true`
-- Update `course_progress` every time a lesson is completed
-
-### Quiz
-- Passing score = 70%
-- Store answers as JSONB
-- Compare against `correct_answer` field
-- After passing final quiz → check if all lessons done → generate certificate
-
-### Certificate
-- Only generate when ALL lessons complete AND final quiz passed
-- Always generate unique `verification_id`
-- Store `issued_at` timestamp
 
 ---
 
@@ -844,7 +610,9 @@ upload.single('fieldName')
 - Never return password in any response
 - Never skip error handling
 - Never hardcode values — always use environment variables
-- Never change the response format — always use `messageError` for errors
-- Never mix `PUT` and `PATCH` — use only`PUT` for partial updates because postgres understand this one
+- Never change the response format — always use `messageError` for server errors
+- Never mix PUT and PATCH — use PUT for full replace, PATCH for partial update
 - Never forget to delete old Cloudinary files before uploading new ones
-- Never create a user profile without checking if one already exists
+- Never create a profile without checking if one already exists
+- Never expose videoUrl to non-enrolled students
+- Never show unpublished courses to students

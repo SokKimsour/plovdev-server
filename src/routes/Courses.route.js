@@ -7,17 +7,17 @@ const { authenticateToken, isTeacher , isAdmin, isEnrolled, isTeacherOrAdmin, is
 const upload = require("../utils/multer")   
 
 // PUBLIC
-router.get('/courses', viewCourse)
-router.get('/course/me', authenticateToken, isTeacherOrAdmin, getTeacherCourses) // must be before /:courseId
-router.get('/course/:courseId', viewCourseById)
+router.get('/courses', /* #swagger.tags = ['Course'] */  viewCourse)
+router.get('/course/me',  /* #swagger.tags = ['Course'] */  authenticateToken, isTeacherOrAdmin, getTeacherCourses) // must be before /:courseId
+router.get('/course/:courseId',  /* #swagger.tags = ['Course'] */  viewCourseById)
 
 // STUDENT
-router.get('/courses/:courseId/content', authenticateToken, isEnrolledOrTeacher, viewCourseContent)
+router.get('/courses/:courseId/content',  /* #swagger.tags = ['Course'] */  authenticateToken, isEnrolledOrTeacher, viewCourseContent)
 
 // TEACHER OR ADMIN
-router.post('/course', authenticateToken, isTeacherOrAdmin, upload.single('thumbnail'), createCourse)
-router.put('/course/:courseId', authenticateToken, isTeacherOrAdmin, upload.single('thumbnail'), updateCourse)
-router.delete('/course/:courseId', authenticateToken, isTeacherOrAdmin, deleteCourse)
-router.post('/course/:courseId/publish', authenticateToken, isTeacherOrAdmin, publishCourse)
+router.post('/course',  /* #swagger.tags = ['Course'] */  authenticateToken, isTeacherOrAdmin, upload.single('thumbnail'), createCourse)
+router.put('/course/:courseId',  /* #swagger.tags = ['Course'] */  authenticateToken, isTeacherOrAdmin, upload.single('thumbnail'), updateCourse)
+router.delete('/course/:courseId',  /* #swagger.tags = ['Course'] */  authenticateToken, isTeacherOrAdmin, deleteCourse)
+router.post('/course/:courseId/publish',  /* #swagger.tags = ['Course'] */  authenticateToken, isTeacherOrAdmin, publishCourse)
 
 module.exports = router;

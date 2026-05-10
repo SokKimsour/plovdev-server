@@ -53,12 +53,19 @@ module.exports = (sequelize, DataTypes) => {
       phoneNumber: DataTypes.STRING,
       password: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       gender: {
         type: DataTypes.ENUM("male", "female", "other"),
         allowNull: true,
       },
+      google_id : {
+       type : DataTypes.STRING , unique : true
+      },
+      auth_provider : {
+        type : DataTypes.ENUM("local" , "google") ,
+        allowNull : false , defaultValue : "local"
+      } ,
       is_verified: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,

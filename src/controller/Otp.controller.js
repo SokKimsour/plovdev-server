@@ -1,4 +1,6 @@
-const { Users, OtpCode } = require("../models");
+const  jwt  = require("jsonwebtoken");
+const { Users, OtpCode , refreshTokens } = require("../models");
+const { where } = require("sequelize");
 
 const verifyOtp = async (req, res) => {
   try {
@@ -23,16 +25,54 @@ const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: 'OTP code has expired' })
     }
 
-    // mark OTP as used
-    await otp.update({ is_used: true })
+    const user = await Users.findByPk(userId ) ;
 
-    // mark user as verified
-    await Users.update(
-      { is_verified: true },
-      { where: { id: userId } }
-    )
+    const userWithName = await Users.findOne({where : {id : userId}} , {
+      include : [
+        {model : OtpCode , as : "otpcode" , attributes : [
+          "fullName" , "email"
+        ]}
+      ]
+    })
 
-    res.json({ message: 'Email verified successfully' })
+    if (!user) {
+      return res.status(404).json({
+        message : "User not found!"
+      })
+    }
+
+    // generate access token
+    const accessToken = jwt.sign(
+      { id  : user.id ,  role  : user.id , } 
+      , process.env.JWT_SECRET , 
+      { expiresIn : process.env.JWT_EXPIRES_IN})
+
+      // generate refresh token
+    const refreshToken = jwt.sign(
+      { id  : user.id ,  role  : user.id , } ,
+       process.env.JWT_REFRESH_SECRET , 
+      {expiresIn : process.env.JWT_REFRESH_EXPIRES_IN})
+
+      await refreshTokens.create({
+        token : refreshToken , 
+        expireAt :   new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        userId : user.id
+       })
+
+      // mark OTP as used
+      await otp.update({ is_used: true })
+      // mark user as verified
+      await user.update(
+        { is_verified: true },
+      )
+
+    res.json({ message: 'Email verified successfully and login successfully!' , 
+      user : userWithName ,
+      token : {
+        accesstoken : accessToken , 
+        refreshToken : refreshToken
+      }
+     })
 
   } catch (error) {
     res.status(500).json({ error: error.message })
@@ -91,8 +131,33 @@ const resendOtp = async (req, res) => {
   }
 }
 
+const viewOtpTable = async (req, res) => {
+  try {
+     const {userId } = req.body ;
+
+     const userWithOtp  = await OtpCode.findOne({where : {userId  : userId } , include : [{
+      model : Users , as : "user" , attributes : ["fullName" , "email"]
+     }] } )
+
+     if (!userWithOtp) {
+      return res.status(404).json({
+        message : "User not found!"
+      })
+     }
+
+     res.json({
+      message : "User with Otp code:" , 
+      user : userWithOtp
+     })
+  } catch (error) {
+    res.status(500).json({
+      messageError : error.message
+    })
+  }
+}
 
 module.exports = {
   verifyOtp,
-  resendOtp
+  resendOtp,
+  viewOtpTable
 }

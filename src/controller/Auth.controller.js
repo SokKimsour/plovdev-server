@@ -7,6 +7,7 @@ const validator = require("validator");
 const { generateUsername, generateOtp } = require("../utils/generateForUser");
 const sendEmail = require("../utils/sendEmail");
 const { Op, where } = require("sequelize");
+const { token } = require("morgan");
 
 // REGISTER
 const register = async (req, res) => {
@@ -72,6 +73,7 @@ const register = async (req, res) => {
       password: hashPassword,
       gender,
       role: "teacher",
+      auth_provider : "local"
     });
 
     await OtpCode.create({
@@ -102,11 +104,23 @@ const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
+    if (user.auth_provider === 'google') {
+    return res.status(400).json({ 
+      message: 'This account uses Google login.' 
+    })
+  }
+
+    // add col is_active and is_blocked
+//    if (!user.is_active || user.is_blocked) {
+//   return res.status(403).json({ message: "Your account has been suspended!" })
+// }
+
+
     // COMPARE PASSWORD
     const isPasswordValid = await bcrypt.compare(password, user.password);
     // CHECK PASSWORD
     if (!isPasswordValid) {
-      return res.status(400).json({ message: "Invalid password" });
+      return res.status(400).json({ message: "Invalid email or password" });
     }
 
     // CHECK IF USER VERIFIED EMAIL
@@ -132,6 +146,17 @@ const login = async (req, res) => {
         expiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
       },
     );
+
+    // Delete or remove expired token
+      await refreshTokens.destroy({
+      where: {
+        userId : user.id,
+        [Op.or]: [
+          { expireAt: { [Op.lt]: new Date() } },
+          { is_revoked: true }
+        ]
+      }
+    })
 
     const refreshTokenTable = await refreshTokens.create({
       token: refreshToken,
@@ -428,6 +453,47 @@ const getMe = async (req, res) => {
   }
 };
 
+// LOGIN WITH GOOGLE  
+const loginOrSignInWIthGoogle = async (req , res) => {
+  try {
+
+    const  user = req.user ;
+
+    if (!user) {
+      return res.status(404).json({
+        message  : "User not found!" 
+      })
+    }
+
+    // generate access token
+    const accesstoken = jwt.sign({id : user.id , role : user.role} , 
+      process.env.JWT_SECRET , {
+        expiresIn : process.env.JWT_EXPIRES_IN
+      }
+    )
+
+    // generate refresh token
+    const refreshToken = jwt.sign({id : user.id , role : user.role} , 
+      process.env.JWT_REFRESH_SECRET , {
+        expiresIn : process.env.JWT_REFRESH_EXPIRES_IN
+      }
+    )
+
+    // create refresh token 
+    await refreshTokens.create({
+      token : refreshToken , 
+      expireAt :  new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      userId : user.id
+    })
+
+    // redirect to frontend
+    res.redirect(`http://localhost:5173/login-success?token=${token}&refreshToken=${refreshToken}`);
+    
+  } catch (error) {
+    res.redirect(`http://localhost:5173/login?error=server_error`);
+  } 
+}
+
 module.exports = {
   register,
   login,
@@ -438,4 +504,5 @@ module.exports = {
   changePassword ,
   verifyForgotOtp,
   resetPassword,
+  loginOrSignInWIthGoogle
 };
