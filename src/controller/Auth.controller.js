@@ -325,9 +325,11 @@ const verifyForgotOtp = async (req, res) => {
     // MARK OTP AS USED
     await otp.update({ is_used: true })
 
+    const resetToken = jwt.sign({userId} , process.env.JWT_SECRET , {expiresIn : "10m"})
+
     res.json({
       message: 'OTP verified successfully. You can now reset your password.',
-      userId
+      resetToken
     })
 
   } catch (error) {
@@ -338,7 +340,7 @@ const verifyForgotOtp = async (req, res) => {
 // RESET PASSWORD
 const resetPassword = async (req, res) => {
   try {
-    const { userId, newPassword } = req.body
+    const { resetToken, newPassword } = req.body
 
     if (!userId || !newPassword) {
       return res.status(400).json({ message: 'Please provide userId and new password!' })
@@ -355,8 +357,16 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ message: 'Weak password: at least 8 characters!' })
     }
 
+    let userId ;
+    try {
+      const decode = jwt.verify(resetToken , process.env.JWT_SECRET )
+      userId = decode.userId
+    } catch (error) {
+      return res.status(400).json({message : "Invalid or expired reset token!"})
+    }
+
     // CHECK IF USER EXISTS
-    const user = await Users.findOne({ where: { id: userId } })
+    const user = await Users.findOne({ where: { id: userId } , attributes : ["id"] })
     if (!user) {
       return res.status(404).json({ message: 'User not found!' })
     }
@@ -370,11 +380,7 @@ const resetPassword = async (req, res) => {
       { where: { id: userId } }
     )
 
-    // REVOKE ALL REFRESH TOKENS - force user to login again
-    await refreshTokens.update(
-      { is_revoked: true },
-      { where: { userId } }
-    )
+     await refreshToken.destroy({where : {userId}})
 
     res.json({ message: 'Password reset successfully. Please login again.' })
 
