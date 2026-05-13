@@ -1,35 +1,41 @@
 'use strict';
+
+const { defaultValueSchemable } = require('sequelize/lib/utils');
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('QaPosts', {
+    await queryInterface.createTable('LessonProgresses', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      body: {
-        type: Sequelize.TEXT
-      },
-      is_answered: {
+      is_complete: {
         type: Sequelize.BOOLEAN ,
         defaultValue : false
+      },
+      last_position_secs : {
+      type : Sequelize.INTEGER
+      } ,
+      completedAt: {
+        type: Sequelize.DATE
+      },
+      userId: {
+        type: Sequelize.INTEGER ,
+        references : {
+          model : "Users" , key : "id"
+        } , 
+        onDelete : "CASCADE",
+        onUpdate : "CASCADE"
       },
       lessonId: {
         type: Sequelize.INTEGER , 
         references : {
           model : "lessons" , key : "id"
-        } ,
-        onDelete : "CASCADE" ,
-        onUpdate : "CASCADE"
-      },
-      userId: {
-        type: Sequelize.INTEGER , 
-        references : {
-          model : "Users" , key : "id"
-        } ,
-        onDelete : "CASCADE" ,
+        } , 
+        onDelete : "CASCADE",
         onUpdate : "CASCADE"
       },
       createdAt: {
@@ -43,6 +49,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('QaPosts');
+    await queryInterface.dropTable('LessonProgresses');
   }
 };
