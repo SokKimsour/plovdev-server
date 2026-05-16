@@ -12,9 +12,9 @@ const { token } = require("morgan");
 // REGISTER
 const register = async (req, res) => {
   try {
-    const { fullName, email, password, gender } = req.body;
+    const { fullName, email, password } = req.body;
 
-    if (!fullName || !email || !password || !gender) {
+    if (!fullName || !email || !password) {
       return res
         .status(400)
         .json({ message: "Please provide all required fields" });
@@ -71,9 +71,8 @@ const register = async (req, res) => {
       userName,
       email,
       password: hashPassword,
-      gender,
       role: "user",
-      auth_provider : "local"
+      auth_provider: "local",
     });
 
     await OtpCode.create({
@@ -104,11 +103,11 @@ const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    if (user.auth_provider === 'google') {
-    return res.status(400).json({ 
-      message: 'This account uses Google login.' 
-    })
-  }
+    if (user.auth_provider === "google") {
+      return res.status(400).json({
+        message: "This account uses Google login.",
+      });
+    }
 
     // add col is_active and is_blocked
     //    if (!user.is_active || user.is_blocked) {
@@ -129,7 +128,7 @@ const login = async (req, res) => {
         .json({ message: "Please verify your email before logging in" });
     }
 
-    const token = jwt.sign(
+    const accessToken = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
       {
@@ -147,33 +146,29 @@ const login = async (req, res) => {
     );
 
     // Delete or remove expired token
-      await refreshTokens.destroy({
+    await refreshTokens.destroy({
       where: {
-        userId : user.id,
-        [Op.or]: [
-          { expireAt: { [Op.lt]: new Date() } },
-          { is_revoked: true }
-        ]
-      }
-    })
+        userId: user.id,
+        [Op.or]: [{ expireAt: { [Op.lt]: new Date() } }, { is_revoked: true }],
+      },
+    });
 
-    const refreshTokenTable = await refreshTokens.create({
+    await refreshTokens.create({
       token: refreshToken,
       expireAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       userId: user.id,
     });
 
-    res.cookie("refreshToken" , refreshToken , {
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', 
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    })
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
     res.json({
       message: "Login successful",
-      token: token,
-      refreshToken: refreshTokenTable,
+      accessToken: accessToken,
     });
   } catch (error) {
     res.status(500).json({ messageError: error.message });
@@ -183,16 +178,16 @@ const login = async (req, res) => {
 // LOGOUT
 const logout = async (req, res) => {
   try {
-    const refreshToken = req.cookies.refreshToken 
+    const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
       return res.status(400).json({ message: "Refresh token is required!" });
     }
-    
+
     // LOGOUT CURRENTLY DEVICE ONLY
-    const deleteToken = await token.destroy({
-      where : {userId : req.user.id , token :  refreshToken}
-    })
+    const deleteToken = await refreshTokens.destroy({
+      where: { token: refreshToken },
+    });
 
     if (!deleteToken) {
       return res
@@ -201,7 +196,17 @@ const logout = async (req, res) => {
     }
 
     // CLEAR COOKIE
-    res.clearCookie('refreshToken');
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
 
     res.json({ message: "Logout successful" });
   } catch (error) {
@@ -209,24 +214,24 @@ const logout = async (req, res) => {
   }
 };
 
-const changePassword = async (req , res) => {
+const changePassword = async (req, res) => {
   try {
-   //  use id from JWT 
-    const userId = req.user.id ;
-    const {oldPassword ,  newPassword } = req.body ;
+    //  use id from JWT
+    const userId = req.user.id;
+    const { oldPassword, newPassword } = req.body;
 
-   const user = await Users.findByPk(userId) ;
-   if (!user) {
-    return res.status(404).json({ message : "User not found!"})
-   }
+    const user = await Users.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found!" });
+    }
 
-   // VERIFY OLD PASSWORD
-   const isMatch = await bcrypt.compare(oldPassword.trim() , user.password)
-   if (!isMatch) {
-    return res.status(404).json({message : "Incorrect old password!"})
-   }
+    // VERIFY OLD PASSWORD
+    const isMatch = await bcrypt.compare(oldPassword.trim(), user.password);
+    if (!isMatch) {
+      return res.status(404).json({ message: "Incorrect old password!" });
+    }
 
-   // VALIDATE THE PASSWORD
+    // VALIDATE THE PASSWORD
     if (
       !validator.isStrongPassword(newPassword, {
         minLength: 8,
@@ -243,164 +248,224 @@ const changePassword = async (req , res) => {
     }
 
     // UPDATE PASSWORD
-    const hashPassword = await bcrypt.hash(newPassword.trim() ,10) ;
-    await user.update({password : hashPassword} ) ;
+    const hashPassword = await bcrypt.hash(newPassword.trim(), 10);
+    await user.update({ password: hashPassword });
 
     // revoke the token to secure the user account
-    await refreshTokens.update({is_revoked : true}, {where : {userId}})
+    await refreshTokens.update({ is_revoked: true }, { where: { userId } });
 
     res.json({
-      message : "Password changed successfully!"
-    })
-
+      message: "Password changed successfully!",
+    });
   } catch (error) {
-    res.status(500).json({ messageError: error.message })
+    res.status(500).json({ messageError: error.message });
   }
-}
+};
 
 const forgotPassword = async (req, res) => {
   try {
-    const { email } = req.body
+    const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({ message: 'Email is required!' })
+      return res.status(400).json({ message: "Email is required!" });
     }
 
     // CHECK IF USER EXISTS
-    const user = await Users.findOne({ where: { email } })
+    const user = await Users.findOne({ where: { email } });
     if (!user) {
-      return res.status(404).json({ message: 'Email not found!' })
+      return res.status(404).json({ message: "Email not found!" });
     }
 
     // GENERATE OTP
-    const otpCode = generateOtp()
+    const otpCode = generateOtp();
 
     // SEND EMAIL FIRST
     await sendEmail(
       email,
-      'PlovDev - Reset Your Password',
+      "PlovDev - Reset Your Password",
       `
         <h2>Reset Your Password</h2>
         <p>Your password reset code is:</p>
         <h1 style="color: #000000">${otpCode}</h1>
         <p>This code expires in 10 minutes.</p>
-      `
-    )
+      `,
+    );
 
     // DELETE OLD OTP
-    await OtpCode.destroy({ where: { userId: user.id } })
+    await OtpCode.destroy({ where: { userId: user.id } });
 
     // SAVE NEW OTP
     await OtpCode.create({
       code: otpCode,
       userId: user.id,
       expireAt: new Date(Date.now() + 10 * 60 * 1000),
-      is_used: false
-    })
+      is_used: false,
+    });
 
     res.json({
-      message: 'Password reset code sent to your email!',
-      userId: user.id
-    })
-
+      message: "Password reset code sent to your email!",
+      userId: user.id,
+    });
   } catch (error) {
-    res.status(500).json({ messageError: error.message })
+    res.status(500).json({ messageError: error.message });
   }
-}
+};
 
 const verifyForgotOtp = async (req, res) => {
   try {
-    const { userId, code } = req.body
+    const { userId, code } = req.body;
 
     if (!userId || !code) {
-      return res.status(400).json({ message: 'Please provide userId and code!' })
+      return res
+        .status(400)
+        .json({ message: "Please provide userId and code!" });
     }
 
     // FIND OTP
     const otp = await OtpCode.findOne({
-      where: { userId, code, is_used: false }
-    })
+      where: { userId, code, is_used: false },
+    });
 
     if (!otp) {
-      return res.status(400).json({ message: 'Invalid OTP code!' })
+      return res.status(400).json({ message: "Invalid OTP code!" });
     }
 
     // CHECK IF EXPIRED
     if (new Date() > otp.expireAt) {
-      return res.status(400).json({ message: 'OTP code has expired!' })
+      return res.status(400).json({ message: "OTP code has expired!" });
     }
 
     // MARK OTP AS USED
-    await otp.update({ is_used: true })
+    await otp.update({ is_used: true });
 
-    const resetToken = jwt.sign({userId} , process.env.JWT_SECRET , {expiresIn : "10m"})
+    const resetToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+
+    console.log("resetToken generated:", resetToken);
+
+    const resetTokenInCookie = res.cookie("resetToken", resetToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 15 * 60 * 1000,
+      domain: "localhost",
+    });
+
+    console.log("resetTokenInCookie", resetTokenInCookie);
+    console.log("cookie set!");
 
     res.json({
-      message: 'OTP verified successfully. You can now reset your password.',
-      resetToken
-    })
-
+      message: "OTP verified successfully. You can now reset your password.",
+    });
   } catch (error) {
-    res.status(500).json({ messageError: error.message })
+    res.status(500).json({ messageError: error.message });
   }
-}
+};
 
 // RESET PASSWORD
 const resetPassword = async (req, res) => {
   try {
-    const { resetToken, newPassword } = req.body
+    console.log("cookies:", req.cookies);
+    console.log("resetToken:", req.cookies.resetToken);
+    const { newPassword } = req.body;
+    const resetToken = req.cookies.resetToken;
 
-    if (!userId || !newPassword) {
-      return res.status(400).json({ message: 'Please provide userId and new password!' })
+    if (!newPassword) {
+      return res
+        .status(400)
+        .json({ message: "Please provide userId and new password!" });
     }
 
     // VALIDATE NEW PASSWORD
-    if (!validator.isStrongPassword(newPassword, {
-      minLength: 8,
-      minUppercase: 0,
-      minLowercase: 0,
-      minNumbers: 0,
-      minSymbols: 0
-    })) {
-      return res.status(400).json({ message: 'Weak password: at least 8 characters!' })
+    if (
+      !validator.isStrongPassword(newPassword, {
+        minLength: 8,
+        minUppercase: 0,
+        minLowercase: 0,
+        minNumbers: 0,
+        minSymbols: 0,
+      })
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Weak password: at least 8 characters!" });
     }
 
-    let userId ;
+    let userId;
     try {
-      const decode = jwt.verify(resetToken , process.env.JWT_SECRET )
-      userId = decode.userId
+      const decode = jwt.verify(resetToken, process.env.JWT_SECRET);
+      userId = decode.userId;
     } catch (error) {
-      return res.status(400).json({message : "Invalid or expired reset token!"})
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired reset token!" });
     }
 
     // CHECK IF USER EXISTS
-    const user = await Users.findOne({ where: { id: userId } , attributes : ["id"] })
+    const user = await Users.findOne({
+      where: { id: userId },
+      attributes: ["id"],
+    });
     if (!user) {
-      return res.status(404).json({ message: 'User not found!' })
+      return res.status(404).json({ message: "User not found!" });
     }
 
     // HASH NEW PASSWORD
-    const hashPassword = await bcrypt.hash(newPassword, 10)
+    const hashPassword = await bcrypt.hash(newPassword, 10);
 
     // UPDATE PASSWORD
-    await Users.update(
-      { password: hashPassword },
-      { where: { id: userId } }
-    )
+    await Users.update({ password: hashPassword }, { where: { id: userId } });
 
-     await refreshToken.destroy({where : {userId}})
+    await refreshTokens.destroy({ where: { userId } });
 
-    res.json({ message: 'Password reset successfully. Please login again.' })
+    const accessToken = jwt.sign(
+      { id: userId, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN },
+    );
 
+    const newRefreshToken = jwt.sign(
+      { id: userId, role: user.role },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN },
+    );
+
+    // SAVE NEW REFRESH TOKEN
+    await refreshTokens.create({
+      token: newRefreshToken,
+      expireAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      userId,
+    });
+
+    // SET REFRESH TOKEN COOKIE
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    // CLEAR RESET TOKEN COOKIE
+    res.clearCookie("resetToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    res.json({
+      message: "Password reset successfully. Please login again.",
+      accessToken,
+    });
   } catch (error) {
-    res.status(500).json({ messageError: error.message })
+    res.status(500).json({ messageError: error.message });
   }
-}
+};
 
 // REFRESH TOKEN
-const refreshToken = async (req, res) => {
+const refreshTokenFunc = async (req, res) => {
   try {
-    const refreshToken = req.cookies.refreshToken 
+    const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
       return res.status(400).json({ message: "Refresh token is required!" });
@@ -421,23 +486,56 @@ const refreshToken = async (req, res) => {
     }
 
     // VERIFY REFRESH TOKEN
-    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, (err, decoded) => {
-      if (err) {
-        return res.status(401).json({ message: "Invalid refresh token!" });
-      }
+    jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET,
+      async (err, decoded) => {
+        if (err) {
+          return res.status(401).json({ message: "Invalid refresh token!" });
+        }
 
-      const newAccessToken = jwt.sign(
-        { id: decoded.id, role: decoded.role },
-        process.env.JWT_SECRET,
-        { expiresIn: process.env.JWT_EXPIRES_IN },
-      );
+        // delete refresh token for clean database
+        await token.destroy();
 
-      res.json({
-        accessToken: newAccessToken,
-      });
-    });
+        const newAccessToken = jwt.sign(
+          { id: decoded.id, role: decoded.role },
+          process.env.JWT_SECRET,
+          { expiresIn: process.env.JWT_EXPIRES_IN },
+        );
+
+        const newRefreshToken = jwt.sign(
+          { id: decoded.id, role: decoded.role },
+          process.env.JWT_REFRESH_SECRET,
+          { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN },
+        );
+
+        await refreshTokens.create({
+          token: newRefreshToken,
+          expireAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          userId: decoded.id,
+        });
+
+        res.cookie("accessToken", newAccessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 15 * 60 * 1000,
+        });
+
+        res.cookie("refreshToken", newRefreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
+        res.json({
+          accessToken: newAccessToken,
+        });
+      },
+    );
   } catch (error) {
-    res.status(500).json({ messageError: error.message });
+    res.status(401).json({ messageError: error.message });
   }
 };
 
@@ -459,64 +557,67 @@ const getMe = async (req, res) => {
   }
 };
 
-// LOGIN WITH GOOGLE  
-const loginWIthGoogle = async (req , res) => {
+// LOGIN WITH GOOGLE
+const loginWIthGoogle = async (req, res) => {
   try {
-    const  user = req.user ;
+    const user = req.user;
 
     if (!user) {
       return res.status(404).json({
-        message  : "User not found!" 
-      })
-     // FOR FRONTEND
-      //  return res.redirect(`http://localhost:5173/login?error=user_not_found`); 
+        message: "User not found!",
+      });
+      // FOR FRONTEND
+      //  return res.redirect(`http://localhost:5173/login?error=user_not_found`);
     }
 
     // generate access token
-    const accesstoken = jwt.sign({id : user.id , role : user.role} , 
-      process.env.JWT_SECRET , {
-        expiresIn : process.env.JWT_EXPIRES_IN
-      }
-    )
+    const accesstoken = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: process.env.JWT_EXPIRES_IN,
+      },
+    );
 
     // generate refresh token
-    const refreshToken = jwt.sign({id : user.id , role : user.role} , 
-      process.env.JWT_REFRESH_SECRET , {
-        expiresIn : process.env.JWT_REFRESH_EXPIRES_IN
-      }
-    )
+    const refreshToken = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_REFRESH_SECRET,
+      {
+        expiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
+      },
+    );
 
-    // create refresh token 
+    // create refresh token
     await refreshTokens.create({
-      token : refreshToken , 
-      expireAt :  new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      userId : user.id
-    })
+      token: refreshToken,
+      expireAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      userId: user.id,
+    });
 
-    res.cookie('refreshToken', refreshToken, {
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000
-    })
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     // redirect to frontend
-    res.redirect(`http://localhost:5173/login-success?token=${token}&refreshToken=${refreshToken}`);
-    
+    res.redirect(`${process.env.FRONTEND_URL}/?token=${accesstoken}`);
   } catch (error) {
     res.redirect(`http://localhost:5173/login?error=server_error`);
-  } 
-}
+  }
+};
 
 module.exports = {
   register,
   login,
   logout,
-  refreshToken,
+  refreshTokenFunc,
   getMe,
   forgotPassword,
-  changePassword ,
+  changePassword,
   verifyForgotOtp,
   resetPassword,
-  loginWIthGoogle
+  loginWIthGoogle,
 };

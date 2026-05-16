@@ -1,3 +1,4 @@
+const { format } = require("morgan");
 const cloudinary = require("../config/cloudinary");
 const { Users, OtpCode, user_profiles } = require("../models");
 const {
@@ -31,6 +32,7 @@ const createUserProfile = async (req, res) => {
       const result = await uploadBufferImageToCloudinary(req.file.buffer, {
         folder: "plovdev/profiles",
         resource_type: "image",
+        format : "webp"
       });
       profileUrl = result.secure_url;
       profilePublicId = result.public_id;
@@ -96,6 +98,7 @@ const updateUserProfile = async (req, res) => {
       const result = await uploadBufferImageToCloudinary(req.file.buffer, {
         folder: "plovdev/profiles",
         resource_type: "image",
+        format : "webp"
       });
       profileUrl = result.secure_url;
       profilePublicId = result.public_id;

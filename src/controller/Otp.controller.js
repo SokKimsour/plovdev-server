@@ -27,14 +27,6 @@ const verifyOtp = async (req, res) => {
 
     const user = await Users.findByPk(userId ) ;
 
-    const userWithName = await Users.findOne({where : {id : userId}} , {
-      include : [
-        {model : OtpCode , as : "otpcode" , attributes : [
-          "fullName" , "email"
-        ]}
-      ]
-    })
-
     if (!user) {
       return res.status(404).json({
         message : "User not found!"
@@ -43,13 +35,13 @@ const verifyOtp = async (req, res) => {
 
     // generate access token
     const accessToken = jwt.sign(
-      { id  : user.id ,  role  : user.id , } 
+      { id  : user.id ,  role  : user.role , } 
       , process.env.JWT_SECRET , 
       { expiresIn : process.env.JWT_EXPIRES_IN})
 
       // generate refresh token
     const refreshToken = jwt.sign(
-      { id  : user.id ,  role  : user.id , } ,
+      { id  : user.id ,  role  : user.role , } ,
        process.env.JWT_REFRESH_SECRET , 
       {expiresIn : process.env.JWT_REFRESH_EXPIRES_IN})
 
@@ -69,16 +61,12 @@ const verifyOtp = async (req, res) => {
       res.cookie("refreshToken" , refreshToken , {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000
       })
 
     res.json({ message: 'Email verified successfully and login successfully!' , 
-      user : userWithName ,
-      token : {
-        accesstoken : accessToken , 
-        refreshToken : refreshToken
-      }
+      accessToken : accessToken
      })
 
   } catch (error) {
