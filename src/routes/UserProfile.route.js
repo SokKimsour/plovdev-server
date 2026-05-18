@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const { createProfile, getUserProfile, getUserProfileById, updateUserProfile } = require("../controller/UserProfile.controller");
-const { authenticateToken, isTeacher } = require('../middlewares/authMiddleWare');
+const { authenticateToken } = require('../middlewares/authMiddleWare');
 
 const {uploadToProfile} = require("../utils/multer");
 

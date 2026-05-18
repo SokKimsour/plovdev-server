@@ -68,7 +68,6 @@ const updateSection = async (req, res) => {
       }]
     });
 
-
     res.json({ message: 'Section updated successfully!', sectionWithCourse });
   } catch (error) {
     res.status(500).json({ messageError: error.message });
@@ -142,7 +141,6 @@ const getSections = async (req, res) => {
     res.status(500).json({ messageError: error.message });
   }
 };
-
 
 module.exports = {
   createSection,

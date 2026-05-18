@@ -92,6 +92,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
+      rejected_reasons: {
+        type: DataTypes.TEXT,
+        allowNull : true
+      }
     },
     {
       sequelize,

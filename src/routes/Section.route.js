@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 
 const { createSection, updateSection , deleteSection , getSections } = require('../controller/Section.controller');
-const { authenticateToken, isTeacher , isAdmin, isTeacherOrAdmin} = require('../middlewares/authMiddleWare');
+const { authenticateToken , isAdmin} = require('../middlewares/authMiddleWare');
 
-router.post('/course/:courseId/section',  /* #swagger.tags = ['Section'] */   authenticateToken ,isTeacherOrAdmin,createSection); // teacher
-router.put('/course/:courseId/section/:sectionId',  /* #swagger.tags = ['Section'] */  authenticateToken , isTeacherOrAdmin, updateSection); // teacher
-router.delete('/course/:courseId/section/:sectionId', /* #swagger.tags = ['Section'] */   authenticateToken ,isTeacherOrAdmin , deleteSection); // teacher
+router.post('/course/:courseId/section',  /* #swagger.tags = ['Section'] */   authenticateToken ,createSection); // teacher
+router.put('/course/:courseId/section/:sectionId',  /* #swagger.tags = ['Section'] */  authenticateToken , updateSection); // teacher
+router.delete('/course/:courseId/section/:sectionId', /* #swagger.tags = ['Section'] */   authenticateToken  , deleteSection); // teacher
 
 // public
 router.get('/course/:courseId/sections',  /* #swagger.tags = ['Section'] */  authenticateToken , getSections); 

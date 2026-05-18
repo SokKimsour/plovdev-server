@@ -36,7 +36,11 @@ const createLesson = async (req, res) => {
     if (req.file) {
       const result = await uploadVideoToCloudinary(req.file.buffer, {
         folder: 'plovdev/videos',
-        resource_type: 'video'
+        resource_type: 'video',
+        transformation: [
+          { quality: "auto" },      // Compresses the file size so it loads instantly
+          { fetch_format: "auto" }  // Changes format automatically to whatever is fastest for the user's browser 
+        ]
       });
       videoUrl = result.secure_url;
       videoPublicId = result.public_id;
@@ -116,7 +120,11 @@ const updateLesson = async (req, res) => {
       }
       const result = await uploadVideoToCloudinary(req.file.buffer, {
         folder: 'plovdev/videos',
-        resource_type: 'video'
+        resource_type: 'video' ,
+        transformation: [
+          { quality: "auto" },      // Compresses the file size so it loads instantly
+          { fetch_format: "auto" }  // Changes format automatically to whatever is fastest for the user's browser
+       ]
       });
       videoUrl = result.secure_url;
       videoPublicId = result.public_id;
@@ -139,7 +147,6 @@ const updateLesson = async (req, res) => {
         {model : courses , as : "course"}
       ]}
     ]})
-
 
     res.json({ message: 'Lesson updated successfully!', lessonWithsection });
   } catch (error) {
@@ -188,7 +195,6 @@ const deleteLesson = async (req, res) => {
 const getLessons = async (req, res) => {
   try {
     const { sectionId } = req.params;
-    console.log("sectionId :" , sectionId)
 
     const section = await sections.findOne({ where: { id: sectionId } });
     if (!section) {

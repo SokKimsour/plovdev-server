@@ -5,6 +5,7 @@ const {
 
 const cloudinary = require("../config/cloudinary");
 const { where } = require("sequelize");
+const { format } = require("morgan");
 
 const createCourse = async (req, res) => {
   try {
@@ -30,6 +31,7 @@ const createCourse = async (req, res) => {
       const result = await uploadBufferImageToCloudinary(req.file.buffer, {
         folder: "plovdev/thumbnails",
         resource_type: "image",
+        format : "webp"
       });
       thumbnailUrl = result.secure_url;
       thumbnailPublicId = result.public_id;
@@ -75,13 +77,6 @@ const updateCourse = async (req, res) => {
     const { courseId } = req.params;
     const teacherId = req.user.id;
 
-    // CHECK IF USER IS TEACHER
-    if (req.user.role !== "teacher") {
-      return res
-        .status(403)
-        .json({ message: "Only teachers can update a course!" });
-    }
-
     // FIND COURSE
     const course = await courses.findOne({
       where: { id: courseId, teacherId },
@@ -94,10 +89,9 @@ const updateCourse = async (req, res) => {
     const { title_en, description, price, what_you_learn, original_price } =
       req.body;
 
-            // parse to float
+    // parse to float
     const parsedPrice = price ? parseFloat(price) : 0
     const parsedOriginalPrice = original_price ? parseFloat(original_price) : 0
-
 
     // HANDLE THUMBNAIL UPDATE
     let thumbnailUrl = course.thumbnailUrl;
@@ -113,6 +107,7 @@ const updateCourse = async (req, res) => {
       const result = await uploadBufferImageToCloudinary(req.file.buffer, {
         folder: "plovdev/thumbnails",
         resource_type: "image",
+        format : "webp"
       });
       thumbnailUrl = result.secure_url;
       thumbnailPublicId = result.public_id;
@@ -215,7 +210,7 @@ const viewCourseById = async (req, res) => {
 // DELETE COURSE
 const deleteCourse = async (req, res) => {
   try {
-    const teacherId = req.user.id
+    const teacherId = req.user.id   // declare as a teacher easy to understand
     const { courseId } = req.params
 
     // FIND COURSE
@@ -244,10 +239,10 @@ const deleteCourse = async (req, res) => {
   }
 }
 
-// PUBLISH COURSE
+// PUBLISH COURSE , ADMIN APPROVE FIRST BEFORE PUBLISH THE COURSE
 const publishCourse = async (req, res) => {
   try {
-    const teacherId = req.user.id
+    const teacherId = req.user.id // declare as a teacher easy to understand
     const { courseId } = req.params
 
     // FIND COURSE
@@ -271,15 +266,10 @@ const publishCourse = async (req, res) => {
   }
 }
 
-//GET ALL COURSES FOR TEACHER
+// GET ALL COURSES FOR TEACHER
 const getTeacherCourses = async (req, res) => {
   try {
     const teacherId = req.user.id
-
-    // CHECK IF USER IS TEACHER
-    if (req.user.role !== 'teacher') {
-      return res.status(403).json({ message: 'Only teachers can view their courses!' })
-    }
 
     const teacherCourses = await courses.findAll({
       where: { teacherId },
