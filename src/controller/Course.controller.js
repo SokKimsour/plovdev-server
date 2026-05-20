@@ -1,4 +1,4 @@
-const { Users, courses , sections , lessons ,categories } = require("../models");
+const { Users, courses , sections , lessons ,categories  , course_categories} = require("../models");
 const {
   uploadBufferImageToCloudinary,
 } = require("../utils/uploadToCloudinary");
@@ -9,7 +9,7 @@ const createCourse = async (req, res) => {
   try {
     const teacherId = req.user.id;
 
-    const { title_en, description, price, original_price, what_you_learn } =
+    const { title_en, description, price, original_price, what_you_learn , category_id} =
       req.body;
 
       // parse to float
@@ -48,6 +48,13 @@ const createCourse = async (req, res) => {
       teacherId,
     });
 
+     if (category_id) {
+      await course_categories.create({
+        courseId: course.id,
+        categoryId: parseInt(category_id)
+      })
+    }
+
     // FETCH CREATED COURSE WITH TEACHER DATA
     const courseWithTeacher = await courses.findOne({
       where: {id : course.id },
@@ -57,6 +64,12 @@ const createCourse = async (req, res) => {
           as: "teacher",
           attributes: ["id", "fullName", "userName"],
         },
+        {
+          model: categories,
+          as: 'category',
+          attributes: ['id', 'name', 'iconUrl'],
+          through: { attributes: [] }
+        }
       ],
     });
 
@@ -84,7 +97,7 @@ const updateCourse = async (req, res) => {
       return res.status(404).json({ message: "Course not found!" });
     }
 
-    const { title_en, description, price, what_you_learn, original_price } =
+    const { title_en, description, price, what_you_learn, original_price ,category_id} =
       req.body;
 
     // parse to float
@@ -122,9 +135,33 @@ const updateCourse = async (req, res) => {
       thumbnailPublicId,
     });
 
+      if (category_id) {
+      await course_categories.create({
+        courseId: course.id,
+        categoryId: parseInt(category_id)
+      })
+    }
+
+      const courseWithTeacher = await courses.findOne({
+      where: {id : course.id },
+      include: [
+        {
+          model: Users,
+          as: "teacher",
+          attributes: ["id", "fullName", "userName"],
+        },
+        {
+          model: categories,
+          as: 'category',
+          attributes: ['id', 'name', 'iconUrl'],
+          through: { attributes: [] }
+        }
+      ],
+    });
+
     res.json({
       message: "Course updated successfully!",
-      course,
+      course : courseWithTeacher,
     });
   } catch (error) {
     res.status(500).json({ messageError: error.message });
@@ -319,12 +356,50 @@ const getTeacherCourses = async (req, res) => {
         model: Users,
         as: 'teacher',
         attributes: ['id', 'fullName', 'userName']
-      }]
+      },
+      {
+        model : categories , 
+        as : "category" , attributes : ["id" , "name" , "iconUrl"],
+        through : {attributes : []}
+      }
+    ]
     })
 
     res.json({
       message: 'Teacher courses retrieved successfully!',
       total: teacherCourses.length,
+      courses: teacherCourses
+    })
+  
+  } catch (error) {
+    return res.status(500).json(error.message)
+  }
+}
+
+
+// FOR TEACHER WHO WANT TO UPDATE THEIR COUSE 
+const getTeacherCoursesById = async (req, res) => {
+  try {
+    const teacherId = req.user.id
+    const {courseId} = req.params
+
+    const teacherCourses = await courses.findOne({
+      where: { teacherId , id : courseId },
+      include: [{
+        model: Users,
+        as: 'teacher',
+        attributes: ['id', 'fullName', 'userName']
+      },
+      {
+        model : categories , 
+        as : "category" , attributes : ["id" , "name" , "iconUrl"],
+        through : {attributes : []}
+      }
+    ]
+    })
+
+    res.json({
+      message: 'Teacher courses retrieved successfully!',
       courses: teacherCourses
     })
 
@@ -417,6 +492,7 @@ module.exports = {
   deleteCourse,
   submitCourse ,
   getTeacherCourses,
+  getTeacherCoursesById,
   viewCourseContent,
   archiveCourse
 };

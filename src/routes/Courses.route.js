@@ -10,6 +10,7 @@ const {
   viewCourse,
   viewCourseById,
   getTeacherCourses,
+  getTeacherCoursesById,
   viewCourseContent
 } = require("../controller/Course.controller");
 
@@ -19,6 +20,7 @@ const { uploadToThumbnail } = require("../utils/multer");
 // PUBLIC
 router.get('/courses', viewCourse)
 router.get('/courses/me', authenticateToken, getTeacherCourses)  
+router.get('/courses/me/:courseId', authenticateToken, getTeacherCoursesById)  
 router.get('/courses/:courseId', viewCourseById)
 
 // STUDENT
