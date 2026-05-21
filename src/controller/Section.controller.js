@@ -26,11 +26,12 @@ const createSection = async (req, res) => {
       include: [{
         model: courses,
         as: 'course',
-        attributes: ['id', 'title_en'] ,
-        include : [{
-          model : sections , as : "section"
-        }]
-      }]
+        attributes: ['id', 'title_en'] 
+      },
+      {
+        model : lessons , as : "lessons" , attributes : {exclude: ["createdAt" , "updatedAt"]}
+      }
+    ]
     });
 
     res.status(201).json({ message: 'Section created successfully!' , section : sectionWithCourse });
