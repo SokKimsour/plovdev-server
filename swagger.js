@@ -15,6 +15,8 @@ const doc = {
     {name : "Section" , description : "Section endpoints"} ,
     {name : "Lesson" , description : "Lesson endpoints"} ,
     {name : "Category" , description : "Category endpoints"} ,
+    {name : "Quizzes" , description : "Quizzes endpoints"} ,
+    {name : "Course Progress" , description : "Course Progress endpoints"} ,
   ]
 };
 

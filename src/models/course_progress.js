@@ -4,8 +4,8 @@ const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class course_progress extends Model {
     static associate(models) {
-      // Define associations here
-
+      this.belongsTo(models.Users, {foreignKey:"userId" , as : "user"})
+      this.belongsTo(models.courses , {foreignKey:"courseId" , as : "course"})
     }
   }
 
