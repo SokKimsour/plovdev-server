@@ -19,7 +19,7 @@ const port = 3000
 app.use(cors({
   origin: process.env.FRONTEND_URL,
   credentials: true ,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   exposedHeaders: ['Authorization'] 
 }));
 
@@ -58,7 +58,14 @@ app.use('/api/v1', lessonRoutes);
 const categoryRoutes = require('./src/routes/Categories.route');
 app.use('/api/v1', categoryRoutes);
 
+const quizRoutes = require('./src/routes/Quiz.routes');
+app.use('/api/v1', quizRoutes);
 
+const courseProgressRoutes = require('./src/routes/CourseProgress.routes');
+app.use('/api/v1', courseProgressRoutes);
+
+
+// TESTING THE BACKEND HEALTH
 app.get("/health" , (req , res) => {
   try {
       res.json({
@@ -89,9 +96,8 @@ cron.schedule('0 0 * * *', async () => {
   }
 });
 
-// ==========================================
+
 //  GLOBAL ERROR HANDLING MIDDLEWARE 
-// ==========================================
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";

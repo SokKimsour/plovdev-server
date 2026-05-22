@@ -1,23 +1,36 @@
 const express = require('express');
 const router = express.Router();
 
-const {createCourse ,  updateCourse , deleteCourse, publishCourse, viewCourse , viewCourseById , getTeacherCourses, viewCourseContent}   = require("../controller/Course.controller");
-const { authenticateToken , isAdmin, isEnrolled} = require('../middlewares/authMiddleWare');
+const {
+  createCourse,
+  updateCourse,
+  deleteCourse,
+  submitCourse,     
+  archiveCourse,    
+  viewCourse,
+  viewCourseById,
+  getTeacherCourses,
+  getTeacherCoursesById,
+  viewCourseContent
+} = require("../controller/Course.controller");
 
-const {uploadToThumnail} = require("../utils/multer")   
+const { authenticateToken, isAdmin, isEnrolled } = require('../middlewares/authMiddleWare');
+const { uploadToThumbnail } = require("../utils/multer");
 
 // PUBLIC
-router.get('/courses', /* #swagger.tags = ['Course'] */  viewCourse)
-router.get('/course/me',  /* #swagger.tags = ['Course'] */  authenticateToken, getTeacherCourses) // must be before /:courseId
-router.get('/course/:courseId',  /* #swagger.tags = ['Course'] */  viewCourseById)
+router.get('/courses', viewCourse)
+router.get('/courses/me', authenticateToken, getTeacherCourses)  
+router.get('/courses/me/:courseId', authenticateToken, getTeacherCoursesById)  
+router.get('/courses/:courseId', viewCourseById)
 
 // STUDENT
-router.get('/courses/:courseId/content',  /* #swagger.tags = ['Course'] */  authenticateToken, viewCourseContent)
+router.get('/courses/:courseId/content', authenticateToken, isEnrolled, viewCourseContent)  
 
-// TEACHER OR ADMIN
-router.post('/course',  /* #swagger.tags = ['Course'] */  authenticateToken, uploadToThumnail.single('thumbnail'), createCourse)
-router.put('/course/:courseId',  /* #swagger.tags = ['Course'] */  authenticateToken, uploadToThumnail.single('thumbnail'), updateCourse)
-router.delete('/course/:courseId',  /* #swagger.tags = ['Course'] */  authenticateToken, deleteCourse)
-router.post('/course/:courseId/publish',  /* #swagger.tags = ['Course'] */  authenticateToken, publishCourse)
+// TEACHER
+router.post('/courses', authenticateToken, uploadToThumbnail.single('thumbnail'), createCourse)
+router.put('/courses/:courseId', authenticateToken, uploadToThumbnail.single('thumbnail'), updateCourse)
+router.delete('/courses/:courseId', authenticateToken, deleteCourse)
+router.post('/courses/:courseId/submit', authenticateToken, submitCourse)  
+router.post('/courses/:courseId/archive', authenticateToken, archiveCourse)  
 
 module.exports = router;

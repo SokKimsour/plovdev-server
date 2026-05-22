@@ -29,6 +29,11 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey : "courseId" ,
         as : "category"
     })
+
+      this.hasMany(models.course_progress , {
+        foreignKey : "courseId" ,
+        as : "course_progress"
+    })
     }
   }
   courses.init(
@@ -81,6 +86,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
+      },
+      total_duration_secs: {
+        type: DataTypes.INTEGER,
+        allowNull : true,
+        defaultValue : 0
       },
       status: {
         type: DataTypes.ENUM(

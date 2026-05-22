@@ -12,7 +12,7 @@ const { route } = require("./Section.route");
 const { authenticate } = require("passport");
 
 router.post("/category", /* #swagger.tags = ['Category'] */ authenticateToken, isAdmin, createCategory);
-router.get("/category", /* #swagger.tags = ['Category'] */ authenticateToken, isAdmin, viewCategory);
+router.get("/category", /* #swagger.tags = ['Category'] */  viewCategory);
 router.put("/category", /* #swagger.tags = ['Category'] */ authenticateToken, isAdmin, updateCategory);
 router.delete("/category", /* #swagger.tags = ['Category'] */ authenticateToken, isAdmin, deleteCategory);
 

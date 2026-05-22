@@ -2,7 +2,6 @@ const { lessons, sections, courses } = require('../models');
 
 const cloudinary = require('../config/cloudinary');
 const { uploadVideoToCloudinary } = require('../utils/uploadToCloudinary');
-const { where } = require('sequelize');
 
 // CREATE LESSON
 const createLesson = async (req, res) => {
@@ -51,7 +50,7 @@ const createLesson = async (req, res) => {
     const parsedPosition = position ? parseInt(position) : 0
 
     const lessonCount = await lessons.count({ where: { sectionId } });
-    const newPosition = position ?? lessonCount + 1;
+    const newPosition = position !== undefined ? parsedPosition : lessonCount + 1;
 
     const lesson = await lessons.create({
       title,
@@ -74,7 +73,7 @@ const createLesson = async (req, res) => {
       }]
     });
 
-    res.status(201).json({ message: 'Lesson created successfully!', lessonWithSection });
+    res.status(201).json({ message: 'Lesson created successfully!', lessons : lessonWithSection });
   } catch (error) {
     res.status(500).json({ messageError: error.message });
   }
@@ -142,11 +141,18 @@ const updateLesson = async (req, res) => {
       position: position ?? lesson.position
     });
 
-    const lessonWithsection = await lessons.findOne({where : {id : lessonId } } , {include : [
-      {model : sections ,  as : "section" , include : [
-        {model : courses , as : "course"}
-      ]}
-    ]})
+    const lessonWithsection = await lessons.findOne({
+      where: { id: lessonId },
+      include: [
+        {
+          model: sections,
+          as: "section",
+          include: [
+            { model: courses, as: "course" }
+          ]
+        }
+      ]
+    });
 
     res.json({ message: 'Lesson updated successfully!', lessonWithsection });
   } catch (error) {
@@ -157,10 +163,10 @@ const updateLesson = async (req, res) => {
 // DELETE LESSON
 const deleteLesson = async (req, res) => {
   try {
-    const {sectionId, lessonId } = req.params;
+    const { sectionId, lessonId } = req.params;
     const teacherId = req.user.id;
 
-    const section = await sections.findOne({ where: { id: sectionId, courseId } });
+    const section = await sections.findOne({ where: { id: sectionId } });
     if (!section) {
       return res.status(404).json({ message: 'Section not found!' });
     }
