@@ -42,7 +42,6 @@ app.use('/api/v1/admin', adminRoutes);
 const telegramRoutes = require('./src/routes/Telegram.route');
 app.use('/telegram', telegramRoutes);
 
-
 const teacherRoutes = require('./src/routes/UserProfile.route');
 app.use('/api/v1', teacherRoutes);
 
@@ -63,6 +62,9 @@ app.use('/api/v1', quizRoutes);
 
 const courseProgressRoutes = require('./src/routes/CourseProgress.routes');
 app.use('/api/v1', courseProgressRoutes);
+
+const paymentRoutes = require('./src/routes/Payment.routes');
+app.use('/api/v1', paymentRoutes);
 
 
 // TESTING THE BACKEND HEALTH

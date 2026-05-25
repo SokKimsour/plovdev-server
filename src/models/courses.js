@@ -34,6 +34,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey : "courseId" ,
         as : "course_progress"
     })
+
+    this.hasMany(models.payments , {
+      foreignKey : "courseId" , as : "payment"
+    })
     }
   }
   courses.init(

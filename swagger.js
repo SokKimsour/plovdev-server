@@ -17,6 +17,7 @@ const doc = {
     {name : "Category" , description : "Category endpoints"} ,
     {name : "Quizzes" , description : "Quizzes endpoints"} ,
     {name : "Course Progress" , description : "Course Progress endpoints"} ,
+    {name : "Payment" , description : "Payment endpoints"} ,
   ]
 };
 
