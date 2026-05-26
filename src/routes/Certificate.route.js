@@ -4,8 +4,8 @@ const { getMyCertificates, verifyCertificate } = require('../controller/Certific
 const { protect } = require('../middlewares/authMiddleware'); 
 
 
-router.get('/certificates/me', protect, getMyCertificates);
+router.get('/certificates/me', protect, /* #swagger.tags = ['Certificates'] */ getMyCertificates);
 
-router.get('/certificates/verify/:verificationId', verifyCertificate);
+router.get('/certificates/verify/:verificationId', /* #swagger.tags = ['Certificates'] */ verifyCertificate);
 
 module.exports = router;

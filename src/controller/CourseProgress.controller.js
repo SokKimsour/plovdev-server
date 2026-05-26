@@ -143,6 +143,8 @@ const toggleLessonProgress = async (req, res) => {
         completedAt: lessonProgress.completedAt,
       },
       courseProgress: updatedProgress,
+      certificateGenerated: !!certificate,
+      certificate: certificate,
     },
   });
 
