@@ -73,6 +73,9 @@ app.use('/api/v1/admin/notifications', adminNotificationRoutes);
 const enrollmentRoutes = require('./src/routes/Enrollment.routes');
 app.use('/api/v1/enrollments', enrollmentRoutes);
 
+const certificateRoutes = require('./src/routes/Certificate.route');
+app.use('/api/v1', certificateRoutes);
+
 
 // TESTING THE BACKEND HEALTH
 app.get("/health" , (req , res) => {
