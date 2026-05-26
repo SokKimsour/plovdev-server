@@ -1,5 +1,7 @@
 # Certificate Generation & Verification Flow
 
+![PlovDev Certificate Mockup](/Users/anbschool0027/.gemini/antigravity/brain/ceb21477-411f-4ac8-bcb8-5e3c4889b1c2/plovdev_certificate_modern_1779768308465.png)
+
 This documentation explains how the certificate logic, database schema, trigger flow, and APIs are implemented in the backend.
 
 ---
