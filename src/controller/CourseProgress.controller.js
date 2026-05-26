@@ -1,6 +1,7 @@
 const { Op } = require('sequelize');
-const { LessonProgress, course_progress, lessons, sections, enrollments } = require('../models');
+const { LessonProgress, course_progress, lessons, sections, enrollments, Quiz, QuizAttempt, Certificate } = require('../models');
 const AppError = require('../utils/appError');
+const { v4: uuidv4 } = require('uuid');
 
 // ─── Toggle Lesson Completion ───────────────────────────────────────────────
 // PATCH /courses/:courseId/lessons/:lessonId/progress/toggle
@@ -116,6 +117,42 @@ const toggleLessonProgress = async (req, res) => {
       courseProgress: updatedProgress,
     },
   });
+
+  // Check if course is fully completed (100%)
+  if (isCompleted) {
+    // 1. Find the final quiz of the course (where sectionId is null)
+    const finalQuiz = await Quiz.findOne({
+      where: { courseId, sectionId: null }
+    });
+
+    if (finalQuiz) {
+      // 2. Check if the user has a passing attempt for this final quiz
+      const passedAttempt = await QuizAttempt.findOne({
+        where: {
+          userId,
+          quizId: finalQuiz.id,
+          passed: true
+        }
+      });
+
+      // 3. If passed, verify that they don't already have a certificate
+      if (passedAttempt) {
+        const existingCert = await Certificate.findOne({
+          where: { userId, courseId }
+        });
+
+        // 4. Create certificate if it doesn't exist
+        if (!existingCert) {
+          await Certificate.create({
+            verification_id: uuidv4(),
+            issued_at: new Date(),
+            userId,
+            courseId
+          });
+        }
+      }
+    }
+  }
 };
 
 // ─── Get My Course Progress ─────────────────────────────────────────────────
