@@ -3,10 +3,8 @@ const router = express.Router();
 
 const { approveJob, rejectJob } = require('../controller/Admin.controller');
 
-
-const authenticate = require('../middlewares/authMiddleware').authenticateToken;
-const isAdmin = require('../middlewares/authMiddleware').isAdmin
-
+const authenticate = require('../middlewares/authMiddleWare').authenticateToken;
+const isAdmin = require('../middlewares/authMiddleWare').isAdmin
 
 
 router.patch('/jobs/:id/approve', authenticate, isAdmin, approveJob);

@@ -17,10 +17,10 @@ app.use(cookieParser());
 const port = 3000
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  credentials: true ,
+  origin: [process.env.FRONTEND_URL , process.env.NGROK_URL] ,
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  exposedHeaders: ['Authorization'] 
+  exposedHeaders: ['Authorization']
 }));
 
 app.set("trust proxy" , 1)
@@ -65,6 +65,9 @@ app.use('/api/v1', courseProgressRoutes);
 
 const paymentRoutes = require('./src/routes/Payment.routes');
 app.use('/api/v1', paymentRoutes);
+
+const adminNotificationRoutes = require('./src/routes/AdminNotification.routes');
+app.use('/api/v1/admin/notifications', adminNotificationRoutes);
 
 
 // TESTING THE BACKEND HEALTH

@@ -6,7 +6,7 @@
     "version": "1.0.0"
   },
   "host": "localhost:3000",
-  "basePath": "/api/v1",
+  "basePath": "/",
   "tags": [
     {
       "name": "Auth",
@@ -43,6 +43,14 @@
     {
       "name": "Course Progress",
       "description": "Course Progress endpoints"
+    },
+    {
+      "name": "Payment",
+      "description": "Payment endpoints"
+    },
+    {
+      "name": "Admin Notification",
+      "description": "Admin Notification endpoints"
     }
   ],
   "schemes": [
@@ -482,6 +490,75 @@
         }
       }
     },
+    "/api/v1/admin/jobs/{id}/approve": {
+      "patch": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/jobs/{id}/reject": {
+      "patch": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/telegram/{secret}": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "secret",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/api/v1/user/profile": {
       "post": {
         "tags": [
@@ -599,6 +676,9 @@
     },
     "/api/v1/courses": {
       "get": {
+        "tags": [
+          "Course"
+        ],
         "description": "",
         "parameters": [
           {
@@ -622,6 +702,9 @@
         }
       },
       "post": {
+        "tags": [
+          "Course"
+        ],
         "description": "",
         "parameters": [
           {
@@ -675,6 +758,9 @@
     },
     "/api/v1/courses/me": {
       "get": {
+        "tags": [
+          "Course"
+        ],
         "description": "",
         "parameters": [
           {
@@ -698,6 +784,9 @@
     },
     "/api/v1/courses/me/{courseId}": {
       "get": {
+        "tags": [
+          "Course"
+        ],
         "description": "",
         "parameters": [
           {
@@ -727,6 +816,9 @@
     },
     "/api/v1/courses/{courseId}": {
       "get": {
+        "tags": [
+          "Course"
+        ],
         "description": "",
         "parameters": [
           {
@@ -749,6 +841,9 @@
         }
       },
       "put": {
+        "tags": [
+          "Course"
+        ],
         "description": "",
         "parameters": [
           {
@@ -791,6 +886,9 @@
         }
       },
       "delete": {
+        "tags": [
+          "Course"
+        ],
         "description": "",
         "parameters": [
           {
@@ -823,6 +921,9 @@
     },
     "/api/v1/courses/{courseId}/content": {
       "get": {
+        "tags": [
+          "Course"
+        ],
         "description": "",
         "parameters": [
           {
@@ -858,6 +959,9 @@
     },
     "/api/v1/courses/{courseId}/submit": {
       "post": {
+        "tags": [
+          "Course"
+        ],
         "description": "",
         "parameters": [
           {
@@ -893,6 +997,9 @@
     },
     "/api/v1/courses/{courseId}/archive": {
       "post": {
+        "tags": [
+          "Course"
+        ],
         "description": "",
         "parameters": [
           {
@@ -1686,6 +1793,184 @@
           },
           "401": {
             "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/payments/initiate": {
+      "post": {
+        "tags": [
+          "Payment"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "courseId": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/payments/check-status/{tranId}": {
+      "get": {
+        "tags": [
+          "Payment"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "tranId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/payments/webhook": {
+      "post": {
+        "tags": [
+          "Payment"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "tran_id": {
+                  "example": "any"
+                },
+                "status": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/notifications/": {
+      "get": {
+        "tags": [
+          "Admin Notification"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/notifications/read-all": {
+      "patch": {
+        "tags": [
+          "Admin Notification"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/notifications/{notificationId}/read": {
+      "patch": {
+        "tags": [
+          "Admin Notification"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "notificationId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
           }
         }
       }

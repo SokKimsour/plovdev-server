@@ -6,7 +6,7 @@ const doc = {
     description: 'API Documentation'
   },
   host: 'localhost:3000',
-  basePath: '/api/v1',
+  basePath: '/',
   tags: [
     { name: 'Auth', description: 'Auth endpoints' },
     {name : "Otp" , description : "Otp endpoints"} ,
@@ -18,6 +18,7 @@ const doc = {
     {name : "Quizzes" , description : "Quizzes endpoints"} ,
     {name : "Course Progress" , description : "Course Progress endpoints"} ,
     {name : "Payment" , description : "Payment endpoints"} ,
+    {name : "Admin Notification" , description : "Admin Notification endpoints"} ,
   ]
 };
 

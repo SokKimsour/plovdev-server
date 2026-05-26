@@ -188,7 +188,7 @@ const viewCourse = async (req, res) => {
         },
         {
           model: categories,
-          as: 'categories',
+          as: 'category',
           attributes: ['id', 'name', 'iconUrl'],
           through: { attributes: [] }
         },
@@ -236,7 +236,7 @@ const viewCourseById = async (req, res) => {
         },
         {
           model: categories,
-          as: 'categories',
+          as: 'category',
           attributes: ['id', 'name', 'iconUrl'],
           through: { attributes: [] }
         },
