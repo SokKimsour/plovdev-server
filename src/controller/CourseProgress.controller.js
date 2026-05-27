@@ -1,6 +1,7 @@
 const { Op } = require('sequelize');
-const { LessonProgress, course_progress, lessons, sections, enrollments } = require('../models');
+const { LessonProgress, course_progress, lessons, sections, enrollments, Quiz, QuizAttempt, Certificate } = require('../models');
 const AppError = require('../utils/appError');
+const { v4: uuidv4 } = require('uuid');
 
 // ─── Toggle Lesson Completion ───────────────────────────────────────────────
 // PATCH /courses/:courseId/lessons/:lessonId/progress/toggle
@@ -69,8 +70,9 @@ const toggleLessonProgress = async (req, res) => {
     },
   });
 
-  const percentage = totalLessons > 0 ? (completedLessons / totalLessons) : 0;
-  const isCompleted = percentage >= 1;
+  const percentage = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
+
+  const isCompleted = percentage >= 100;
 
   // 6. Find or create course_progress record, then update
   let courseProgress = await course_progress.findOne({ where: { userId, courseId } });
@@ -99,6 +101,33 @@ const toggleLessonProgress = async (req, res) => {
     });
   }
 
+  let certificate = null;
+  if (isCompleted) {
+    const finalQuiz = await Quiz.findOne({
+      where: { courseId, sectionId: null }
+    });
+    if (finalQuiz) {
+      const passedAttempt = await QuizAttempt.findOne({
+        where: { userId, quizId: finalQuiz.id, passed: true }
+      });
+      if (passedAttempt) {
+        const existingCert = await Certificate.findOne({
+          where: { userId, courseId }
+        });
+        if (!existingCert) {
+          certificate = await Certificate.create({
+            verification_id: uuidv4(),
+            issued_at: new Date(),
+            userId,
+            courseId
+          });
+        } else {
+          certificate = existingCert;
+        }
+      }
+    }
+  }
+
   // 7. Re-fetch for clean response (Create Then Fetch pattern)
   const updatedProgress = await course_progress.findOne({
     where: { userId, courseId },
@@ -114,8 +143,12 @@ const toggleLessonProgress = async (req, res) => {
         completedAt: lessonProgress.completedAt,
       },
       courseProgress: updatedProgress,
+      certificateGenerated: !!certificate,
+      certificate: certificate,
     },
   });
+
+  
 };
 
 // ─── Get My Course Progress ─────────────────────────────────────────────────

@@ -11,6 +11,15 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      this.belongsTo(models.Users, {
+        foreignKey: 'userId',
+        as: 'user'
+      });
+      // A certificate belongs to a Course (using the 'courses' model name in this project)
+      this.belongsTo(models.courses, {
+        foreignKey: 'courseId',
+        as: 'course'
+      });
     }
   }
   Certificate.init({
