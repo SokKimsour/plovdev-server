@@ -3,7 +3,8 @@ require('dotenv').config();
 const express = require('express')
 const morgan = require('morgan');
 const passport = require("passport") ;
-const Op = require('sequelize');
+const { Op } = require('sequelize');
+const { refreshTokens } = require('./src/models');
 const cron = require('node-cron');
 const cors =  require("cors")
 const cookieParser = require("cookie-parser")
@@ -69,12 +70,27 @@ app.use('/api/v1', paymentRoutes);
 const adminNotificationRoutes = require('./src/routes/AdminNotification.routes');
 app.use('/api/v1/admin/notifications', adminNotificationRoutes);
 
+const enrollmentRoutes = require('./src/routes/Enrollment.routes');
+app.use('/api/v1/enrollments', enrollmentRoutes);
+
 
 // TESTING THE BACKEND HEALTH
 app.get("/health" , (req , res) => {
   try {
       res.json({
         message : "Backend is good!"
+      })
+  } catch (error) {
+    res.status(500).json({
+      message : error.message
+    })
+  }
+})
+
+app.get("/" , (req , res) => {
+  try {
+      res.json({
+        message : "Welcome to PlovDev Backend!"
       })
   } catch (error) {
     res.status(500).json({

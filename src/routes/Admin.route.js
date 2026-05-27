@@ -7,8 +7,8 @@ const authenticate = require('../middlewares/authMiddleWare').authenticateToken;
 const isAdmin = require('../middlewares/authMiddleWare').isAdmin
 
 
-router.patch('/jobs/:id/approve', authenticate, isAdmin, approveJob);
+router.patch('/jobs/:id/approve',  /* #swagger.tags = ['Admin'] */ authenticate, isAdmin, approveJob);
 
-router.patch('/jobs/:id/reject', authenticate, isAdmin, rejectJob);
+router.patch('/jobs/:id/reject',  /* #swagger.tags = ['Admin'] */ authenticate, isAdmin, rejectJob);
 
 module.exports = router;

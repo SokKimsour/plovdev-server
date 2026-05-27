@@ -176,7 +176,7 @@ const viewCourse = async (req, res) => {
     const offset = (page - 1) * limit;
 
     const { count, rows: allCourses } = await courses.findAndCountAll({
-      // where: { status: 'published' },
+      where: { status: 'published' },
       limit: parseInt(limit),
       offset: parseInt(offset),
       distinct: true,  //  needed with include to get correct count
@@ -227,7 +227,7 @@ const viewCourseById = async (req, res) => {
     const { courseId } = req.params;
 
     const course = await courses.findOne({
-      where: { id: courseId },
+      where: { id: courseId , status : "published" },
       include: [
         {
           model: Users,

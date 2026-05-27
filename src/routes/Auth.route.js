@@ -12,13 +12,13 @@ router.post('/auth/logout',  /* #swagger.tags = ['Auth'] */    logout);
 router.get('/users/me'  /* #swagger.tags = ['Auth'] */, authenticateToken , getMe);
 
 // LOGIN WITH GOOGLE
-router.get('/auth/google',
+router.get('/auth/google',  /* #swagger.tags = ['Auth'] */
   passport.authenticate('google', { 
     scope: ['profile', 'email'] 
   })
 )
 
-router.get('/auth/google/callback',
+router.get('/auth/google/callback',  /* #swagger.tags = ['Auth'] */
   passport.authenticate('google', { 
     session: false,
     failureRedirect:[ 'http://localhost:5173/login' ]

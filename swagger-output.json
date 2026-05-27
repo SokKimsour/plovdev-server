@@ -51,6 +51,18 @@
     {
       "name": "Admin Notification",
       "description": "Admin Notification endpoints"
+    },
+    {
+      "name": "Enrollment",
+      "description": "Enrollment endpoints"
+    },
+    {
+      "name": "Job-board",
+      "description": "Job board endpoints"
+    },
+    {
+      "name": "Admin",
+      "description": "Admin endpoints"
     }
   ],
   "schemes": [
@@ -223,6 +235,9 @@
     },
     "/api/v1/auth/google": {
       "get": {
+        "tags": [
+          "Auth"
+        ],
         "description": "",
         "responses": {
           "default": {
@@ -233,6 +248,9 @@
     },
     "/api/v1/auth/google/callback": {
       "get": {
+        "tags": [
+          "Auth"
+        ],
         "description": "",
         "responses": {
           "404": {
@@ -492,6 +510,9 @@
     },
     "/api/v1/admin/jobs/{id}/approve": {
       "patch": {
+        "tags": [
+          "Admin"
+        ],
         "description": "",
         "parameters": [
           {
@@ -516,6 +537,9 @@
     },
     "/api/v1/admin/jobs/{id}/reject": {
       "patch": {
+        "tags": [
+          "Admin"
+        ],
         "description": "",
         "parameters": [
           {
@@ -540,6 +564,9 @@
     },
     "/telegram/{secret}": {
       "post": {
+        "tags": [
+          "Job-board"
+        ],
         "description": "",
         "parameters": [
           {
@@ -1329,6 +1356,9 @@
           "401": {
             "description": "Unauthorized"
           },
+          "403": {
+            "description": "Forbidden"
+          },
           "404": {
             "description": "Not Found"
           },
@@ -1828,6 +1858,9 @@
           },
           "401": {
             "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal Server Error"
           }
         }
       }
@@ -1875,9 +1908,6 @@
               "type": "object",
               "properties": {
                 "tran_id": {
-                  "example": "any"
-                },
-                "status": {
                   "example": "any"
                 }
               }
@@ -1956,6 +1986,55 @@
             "required": true,
             "type": "string"
           },
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/enrollments/my-courses": {
+      "get": {
+        "tags": [
+          "Enrollment"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/enrollments/admin": {
+      "get": {
+        "tags": [
+          "Enrollment"
+        ],
+        "description": "",
+        "parameters": [
           {
             "name": "authorization",
             "in": "header",

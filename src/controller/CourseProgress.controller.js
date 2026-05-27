@@ -69,8 +69,8 @@ const toggleLessonProgress = async (req, res) => {
     },
   });
 
-  const percentage = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
-  const isCompleted = percentage >= 100;
+  const percentage = totalLessons > 0 ? (completedLessons / totalLessons) : 0;
+  const isCompleted = percentage >= 1;
 
   // 6. Find or create course_progress record, then update
   let courseProgress = await course_progress.findOne({ where: { userId, courseId } });

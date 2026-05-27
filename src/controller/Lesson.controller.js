@@ -1,4 +1,4 @@
-const { lessons, sections, courses } = require('../models');
+const { lessons, sections, courses, enrollments } = require('../models');
 
 const cloudinary = require('../config/cloudinary');
 const { uploadVideoToCloudinary } = require('../utils/uploadToCloudinary');
@@ -242,6 +242,17 @@ const getLessonById = async (req, res) => {
 
     if (!lesson) {
       return res.status(404).json({ message: 'Lesson not found!' });
+    }
+
+    // CHECK IF THE USER IS ENROLLED (Except if they are an admin or it is a free preview)
+    if (req.user.role !== 'admin' && !lesson.is_free_preview) {
+      const enrollment = await enrollments.findOne({
+        where: { userId: req.user.id, courseId: section.courseId }
+      });
+      
+      if (!enrollment) {
+        return res.status(403).json({ message: 'Access denied! You are not enrolled in this course.' });
+      }
     }
 
     res.json({ message: 'Lesson retrieved successfully!', lesson });

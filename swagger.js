@@ -19,6 +19,9 @@ const doc = {
     {name : "Course Progress" , description : "Course Progress endpoints"} ,
     {name : "Payment" , description : "Payment endpoints"} ,
     {name : "Admin Notification" , description : "Admin Notification endpoints"} ,
+    {name : "Enrollment" , description : "Enrollment endpoints"} ,
+    {name : "Job-board" , description : "Job board endpoints"} ,
+    {name : "Admin" , description : "Admin endpoints"} ,
   ]
 };
 

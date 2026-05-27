@@ -14,8 +14,8 @@ const createPayment = async (req, res) => {
         throw new AppError("Course not found!", 404);
     }
 
-    if (!course.status === "published" ) {
-     throw new AppError("Course is not published")
+    if (course.status !== "published") {
+        throw new AppError("Course is not published", 400);
     }
 
     const user = await Users.findByPk(userId);

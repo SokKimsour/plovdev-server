@@ -6,7 +6,7 @@ const env = require('dotenv').config()
 // we check the secret at request time inside the handler.
 // This means it reads from process.env on every request,
 // not just once when the file first loads.
-router.post('/:secret', (req, res, next) => {
+router.post('/:secret',  /* #swagger.tags = ['Job-board'] */  (req, res, next) => {
   if (req.params.secret !== process.env.TELEGRAM_WEBHOOK_URL) {
     return res.status(404).json({ message: 'Not found' })
   }
