@@ -1,6 +1,8 @@
 const  jwt  = require("jsonwebtoken");
 const { Users, OtpCode , refreshTokens } = require("../models");
-const { where } = require("sequelize");
+const { generateOtp } = require("../utils/generateForUser");
+const sendEmail = require("../utils/sendEmail");
+const { getVerificationEmail } = require("../utils/emailTemplates");
 
 const verifyOtp = async (req, res) => {
   try {
@@ -103,12 +105,7 @@ const resendOtp = async (req, res) => {
     await sendEmail(
       user.email,
       'PlovDev - Verify Your Email',
-      `
-        <h2>Welcome to PlovDev!</h2>
-        <p>Your new verification code is:</p>
-        <h1 style="color: #000000">${otpCode}</h1>
-        <p>This code expires in 10 minutes.</p>
-      `
+      getVerificationEmail(user.fullName, otpCode)
     )
 
     // SAVE NEW OTP TO DATABASE

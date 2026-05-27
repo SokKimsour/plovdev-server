@@ -18,19 +18,19 @@ const { authenticateToken, isAdmin, isEnrolled } = require('../middlewares/authM
 const { uploadToThumbnail } = require("../utils/multer");
 
 // PUBLIC
-router.get('/courses', viewCourse)
-router.get('/courses/me', authenticateToken, getTeacherCourses)  
-router.get('/courses/me/:courseId', authenticateToken, getTeacherCoursesById)  
-router.get('/courses/:courseId', viewCourseById)
+router.get('/courses', /* #swagger.tags = ['Course'] */  viewCourse)
+router.get('/courses/me',  /* #swagger.tags = ['Course'] */  authenticateToken, getTeacherCourses)  
+router.get('/courses/me/:courseId',  /* #swagger.tags = ['Course'] */  authenticateToken, getTeacherCoursesById)  
+router.get('/courses/:courseId',  /* #swagger.tags = ['Course'] */  viewCourseById)
 
 // STUDENT
-router.get('/courses/:courseId/content', authenticateToken, isEnrolled, viewCourseContent)  
+router.get('/courses/:courseId/content',  /* #swagger.tags = ['Course'] */  authenticateToken, isEnrolled, viewCourseContent)  
 
 // TEACHER
-router.post('/courses', authenticateToken, uploadToThumbnail.single('thumbnail'), createCourse)
-router.put('/courses/:courseId', authenticateToken, uploadToThumbnail.single('thumbnail'), updateCourse)
-router.delete('/courses/:courseId', authenticateToken, deleteCourse)
-router.post('/courses/:courseId/submit', authenticateToken, submitCourse)  
-router.post('/courses/:courseId/archive', authenticateToken, archiveCourse)  
+router.post('/courses', /* #swagger.tags = ['Course'] */  authenticateToken, uploadToThumbnail.single('thumbnail'), createCourse)
+router.put('/courses/:courseId',  /* #swagger.tags = ['Course'] */  authenticateToken, uploadToThumbnail.single('thumbnail'), updateCourse)
+router.delete('/courses/:courseId',  /* #swagger.tags = ['Course'] */  authenticateToken, deleteCourse)
+router.post('/courses/:courseId/submit',  /* #swagger.tags = ['Course'] */  authenticateToken, submitCourse)  
+router.post('/courses/:courseId/archive',  /* #swagger.tags = ['Course'] */  authenticateToken, archiveCourse)  
 
 module.exports = router;

@@ -19,7 +19,10 @@ module.exports = (sequelize, DataTypes) => {
         as: "course",
       });
 
-      // payment not yet
+      this.belongsTo(models.payments, {
+        foreignKey: "paymentId",
+        as: "payment",
+      });
     }
   }
   enrollments.init(
@@ -29,7 +32,7 @@ module.exports = (sequelize, DataTypes) => {
       completeAt: DataTypes.DATE,
       userId: DataTypes.INTEGER,
       courseId: DataTypes.INTEGER,
-      // payment not yet
+      paymentId: DataTypes.INTEGER,
     },
     {
       sequelize,

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlovDev Certificate Test</title>
+  
+  <!-- Google Fonts for professional typography & realistic signature -->
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- html2pdf.js library CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    /* Reset & Center Container */
+    body {
+      background: #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Certificate Wrapper to mimic Letter Landscape PDF export (11in x 8.5in at 96 DPI) */
+    .certificate-container {
+      width: 1056px;
+      height: 816px;
+      background: #ffffff;
+      padding: 24px;
+      box-sizing: border-box;
+      position: relative;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    .certificate-inner {
+      border: 1px solid #e2e8f0;
+      width: 100%;
+      height: 100%;
+      padding: 60px 80px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      background: #ffffff;
+    }
+
+    /* Header Styling */
+    .certificate-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .header-logo {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-plov {
+      color: #2563eb; /* Modern Blue */
+    }
+
+    .logo-dev {
+      color: #0f172a; /* Slate 900 */
+    }
+
+    .header-date {
+      text-align: right;
+    }
+
+    .date-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 1px;
+      margin-bottom: 2px;
+    }
+
+    .date-value {
+      font-size: 14px;
+      font-weight: 500;
+      color: #334155;
+    }
+
+    /* Body/Content Styling */
+    .certificate-body {
+      text-align: center;
+      margin: auto 0;
+    }
+
+    .certify-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #2563eb;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 30px;
+    }
+
+    .certify-text {
+      font-size: 15px;
+      color: #475569;
+      font-weight: 400;
+      margin: 0;
+    }
+
+    .student-name {
+      font-family: 'Lora', serif;
+      font-size: 44px;
+      font-weight: 500;
+      color: #0f172a;
+      margin: 15px 0;
+      letter-spacing: 0.5px;
+    }
+
+    .complete-text {
+      font-size: 15px;
+      color: #475569;
+      margin: 0;
+    }
+
+    .course-title {
+      font-family: 'Lora', serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 15px 0 10px 0;
+    }
+
+    .course-desc {
+      font-size: 14px;
+      color: #64748b;
+      max-width: 680px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Footer Layout */
+    .certificate-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .footer-verification {
+      text-align: left;
+      max-width: 450px;
+    }
+
+    .verify-item {
+      font-size: 11px;
+      color: #64748b;
+      margin: 0 0 4px 0;
+      line-height: 1.4;
+    }
+
+    .verify-item a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+
+    .verify-item a:hover {
+      text-decoration: underline;
+    }
+
+    .verify-note {
+      font-size: 10px;
+      color: #94a3b8;
+      margin-top: 8px;
+      line-height: 1.4;
+      border-top: 1px solid #f1f5f9;
+      padding-top: 8px;
+    }
+
+    .footer-signature {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .signature-container {
+      height: 45px;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+    }
+
+    .signature-handwritten {
+      font-family: 'Caveat', cursive;
+      font-size: 32px;
+      color: #1e3a8a;
+      transform: rotate(-3deg);
+      display: inline-block;
+      padding-right: 15px;
+    }
+
+    .signature-line {
+      width: 220px;
+      height: 1px;
+      background: #cbd5e1;
+      margin-bottom: 8px;
+    }
+
+    .signer-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+      margin: 0;
+    }
+
+    .signer-title {
+      font-size: 11px;
+      color: #64748b;
+      margin: 2px 0 0 0;
+    }
+
+    /* Action button design */
+    .btn-download {
+      margin-top: 25px;
+      padding: 12px 28px;
+      background: #0f172a;
+      color: #ffffff;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+
+    .btn-download:hover {
+      background: #1e293b;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- The Styled Certificate Template -->
+  <div id="certificate-card" class="certificate-container">
+    <div class="certificate-inner">
+      
+      <div class="certificate-header">
+        <div class="header-logo">
+          <span class="logo-plov">Plov</span><span class="logo-dev">Dev</span>
+        </div>
+        <div class="header-date">
+          <span class="date-label">ISSUED ON</span>
+          <span class="date-value">May 26, 2026</span>
+        </div>
+      </div>
+
+      <div class="certificate-body">
+        <div class="certify-title">Certificate of Completion</div>
+        <p class="certify-text">This is to certify that</p>
+        <h2 class="student-name">JOHN DOE</h2>
+        <p class="complete-text">has successfully completed the course</p>
+        <h3 class="course-title">Web Development Immersive</h3>
+        <p class="course-desc">
+          An intensive, comprehensive program covering advanced frontend development, backend API design, database modeling, and production deployment practices.
+        </p>
+      </div>
+
+      <div class="certificate-footer">
+        <div class="footer-verification">
+          <p class="verify-item"><strong>Credential ID:</strong> PD-20260526-992</p>
+          <p class="verify-item"><strong>Verify at:</strong> <a href="#" target="_blank">plovdev.com/verify/PD-20260526-992</a></p>
+          <p class="verify-note">
+            PlovDev Academy has confirmed the identity of this individual and their participation in the course.
+          </p>
+        </div>
+
+        <div class="footer-signature">
+          <div class="signature-container">
+            <span class="signature-handwritten">Vireak K.</span>
+          </div>
+          <div class="signature-line"></div>
+          <p class="signer-name">Vireak K.</p>
+          <p class="signer-title">Founder, PlovDev</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <button onclick="downloadCertificatePDF()" class="btn-download">
+    Download PDF Certificate
+  </button>
+
+  <script>
+    function downloadCertificatePDF() {
+      const element = document.getElementById('certificate-card');
+
+      const options = {
+        margin:       0,
+        filename:     'plovdev-certificate.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
+      };
+
+      html2pdf().set(options).from(element).save();
+    }
+  </script>
+
+</body>
+</html>

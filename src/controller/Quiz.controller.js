@@ -1,4 +1,4 @@
-const { Quiz, QuizQuestion, QuizAttempt, Certificate, course_progress , courses } = require('../models');
+const { Quiz, QuizQuestion, QuizAttempt, Certificate, course_progress , courses, sections } = require('../models');
 const AppError = require('../utils/appError');
 const { v4: uuidv4 } = require('uuid');
 
@@ -122,7 +122,7 @@ const attemptQuiz = async (req, res) => {
     });
 
     // Check if progress parameters reveal full course completion (100%)
-    if (progress && (progress.is_completed || parseFloat(progress.percentage) >= 100)) {
+    if (progress && (progress.is_completed || parseFloat(progress.percentage) >= 1)) {
       const existingCert = await Certificate.findOne({
         where: { userId, courseId: quiz.courseId },
       });

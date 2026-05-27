@@ -6,6 +6,7 @@ const validator = require("validator");
 
 const { generateUsername, generateOtp } = require("../utils/generateForUser");
 const sendEmail = require("../utils/sendEmail");
+const { getVerificationEmail, getResetPasswordEmail } = require("../utils/emailTemplates");
 const { Op, where } = require("sequelize");
 const { token } = require("morgan");
 
@@ -54,12 +55,7 @@ const register = async (req, res) => {
     await sendEmail(
       email,
       "PlovDev - Verify Your Email",
-      `
-        <h2>Welcome to PlovDev!</h2>
-        <p>Your verification code is:</p>
-        <h1 style="color: #000000">${otpCode}</h1>
-        <p>This code expires in 10 minutes.</p>
-      `,
+      getVerificationEmail(fullName, otpCode)
     );
 
     // EMAIL SENT SUCCESSFULLY — now save to database
@@ -283,12 +279,7 @@ const forgotPassword = async (req, res) => {
     await sendEmail(
       email,
       "PlovDev - Reset Your Password",
-      `
-        <h2>Reset Your Password</h2>
-        <p>Your password reset code is:</p>
-        <h1 style="color: #000000">${otpCode}</h1>
-        <p>This code expires in 10 minutes.</p>
-      `,
+      getResetPasswordEmail(user.fullName, otpCode)
     );
 
     // DELETE OLD OTP
@@ -349,7 +340,6 @@ const verifyForgotOtp = async (req, res) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 15 * 60 * 1000,
-      domain: "localhost",
     });
 
     console.log("resetTokenInCookie", resetTokenInCookie);
