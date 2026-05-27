@@ -7,7 +7,28 @@ module.exports = {
     "password": process.env.DB_PASSWORD,
     "database": process.env.DB_NAME,
     "host": process.env.DB_HOST,
-    "dialect": "postgres"
+    "dialect": "postgres" , 
+    loggin: false ,
+     pool: {
+      max: 10,     
+      min: 2,    
+      acquire: 30000,
+      idle: 10000
+    }
+  },
+  "production": {
+    "username": process.env.DB_USER,
+    "password": process.env.DB_PASSWORD,
+    "database": process.env.DB_NAME,
+    "host": process.env.DB_HOST,
+    "dialect": "postgres" , 
+    loggin: false ,
+     pool: {
+      max: 10,     
+      min: 2,    
+      acquire: 30000,
+      idle: 10000
+    }
   },
 
 }

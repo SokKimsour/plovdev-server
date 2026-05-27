@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
   class OtpCode extends Model {
     static associate(models) {
       // OTP belongs to a User
-      OtpCode.belongsTo(models.Users, {
+      this.belongsTo(models.Users, {
         foreignKey: 'userId',
         as: 'user'
       })

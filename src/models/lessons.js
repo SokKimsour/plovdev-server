@@ -1,7 +1,7 @@
 "use strict";
 const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
-  class teacher_profiles extends Model {
+  class lessons extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -9,59 +9,56 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      teacher_profiles.belongsTo(models.Users, {
-        foreignKey: "userId",
-        as: "user",
+      this.belongsTo(models.sections, {
+        foreignKey: "sectionId",
+        as: "section",
       });
     }
   }
-  teacher_profiles.init(
+  lessons.init(
     {
-      profileUrl: {
+      title: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      videoUrl: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      bio: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-      },
-      yearsExp: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      },
-      payoutAccount: {
+      videoPublicId: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      commissionRate: {
-        type: DataTypes.DECIMAL,
-        allowNull: true,
-        defaultValue: 0.4,
-      },
-      avgRating: {
-        type: DataTypes.DECIMAL,
-        allowNull: true,
-        defaultValue: 0,
-      },
-      total_students: {
+      duration_secs: {
         type: DataTypes.INTEGER,
         allowNull: true,
         defaultValue: 0,
       },
-      userId: {
+      is_free_preview: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      position: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        unique: true,
+        defaultValue: 0,
+      },
+      sectionId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
         references: {
-          model: "Users",
+          model: "sections",
           key: "id",
         },
+        onUpdate: "CASCADE",
+        onDelete: "CASCADE",
       },
     },
     {
       sequelize,
-      modelName: "teacher_profiles",
+      modelName: "lessons",
     },
   );
-  return teacher_profiles;
+  return lessons;
 };
