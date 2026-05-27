@@ -3,7 +3,8 @@ require('dotenv').config();
 const express = require('express')
 const morgan = require('morgan');
 const passport = require("passport") ;
-const Op = require('sequelize');
+const { Op } = require('sequelize');
+const { refreshTokens } = require('./src/models');
 const cron = require('node-cron');
 const cors =  require("cors")
 const cookieParser = require("cookie-parser")
@@ -17,10 +18,10 @@ app.use(cookieParser());
 const port = 3000
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  credentials: true ,
+  origin: [process.env.FRONTEND_URL , process.env.NGROK_URL] ,
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  exposedHeaders: ['Authorization'] 
+  exposedHeaders: ['Authorization']
 }));
 
 app.set("trust proxy" , 1)
@@ -41,7 +42,6 @@ app.use('/api/v1/admin', adminRoutes);
 
 const telegramRoutes = require('./src/routes/Telegram.route');
 app.use('/telegram', telegramRoutes);
-
 
 const teacherRoutes = require('./src/routes/UserProfile.route');
 app.use('/api/v1', teacherRoutes);
@@ -64,12 +64,33 @@ app.use('/api/v1', quizRoutes);
 const courseProgressRoutes = require('./src/routes/CourseProgress.routes');
 app.use('/api/v1', courseProgressRoutes);
 
+const paymentRoutes = require('./src/routes/Payment.routes');
+app.use('/api/v1', paymentRoutes);
+
+const adminNotificationRoutes = require('./src/routes/AdminNotification.routes');
+app.use('/api/v1/admin/notifications', adminNotificationRoutes);
+
+const enrollmentRoutes = require('./src/routes/Enrollment.routes');
+app.use('/api/v1/enrollments', enrollmentRoutes);
+
 
 // TESTING THE BACKEND HEALTH
 app.get("/health" , (req , res) => {
   try {
       res.json({
         message : "Backend is good!"
+      })
+  } catch (error) {
+    res.status(500).json({
+      message : error.message
+    })
+  }
+})
+
+app.get("/" , (req , res) => {
+  try {
+      res.json({
+        message : "Welcome to PlovDev Backend!"
       })
   } catch (error) {
     res.status(500).json({
