@@ -1,4 +1,4 @@
-const { Certificate, courses, User } = require('../models');
+const { Certificate, courses, Users } = require('../models');
 const AppError = require('../utils/appError');
 
 // GET /api/v1/certificates/me (Protected route)
@@ -31,7 +31,7 @@ const verifyCertificate = async (req, res) => {
     where: { verification_id: verificationId },
     include: [
       {
-        model: User,
+        model: Users,
         as: 'user',
         attributes: ['id', 'fullName', 'userName']
       },

@@ -70,8 +70,9 @@ const toggleLessonProgress = async (req, res) => {
     },
   });
 
-  const percentage = totalLessons > 0 ? (completedLessons / totalLessons) : 0;
-  const isCompleted = percentage >= 1;
+  const percentage = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
+
+  const isCompleted = percentage >= 100;
 
   // 6. Find or create course_progress record, then update
   let courseProgress = await course_progress.findOne({ where: { userId, courseId } });
@@ -100,6 +101,33 @@ const toggleLessonProgress = async (req, res) => {
     });
   }
 
+  let certificate = null;
+  if (isCompleted) {
+    const finalQuiz = await Quiz.findOne({
+      where: { courseId, sectionId: null }
+    });
+    if (finalQuiz) {
+      const passedAttempt = await QuizAttempt.findOne({
+        where: { userId, quizId: finalQuiz.id, passed: true }
+      });
+      if (passedAttempt) {
+        const existingCert = await Certificate.findOne({
+          where: { userId, courseId }
+        });
+        if (!existingCert) {
+          certificate = await Certificate.create({
+            verification_id: uuidv4(),
+            issued_at: new Date(),
+            userId,
+            courseId
+          });
+        } else {
+          certificate = existingCert;
+        }
+      }
+    }
+  }
+
   // 7. Re-fetch for clean response (Create Then Fetch pattern)
   const updatedProgress = await course_progress.findOne({
     where: { userId, courseId },
@@ -118,41 +146,7 @@ const toggleLessonProgress = async (req, res) => {
     },
   });
 
-  // Check if course is fully completed (100%)
-  if (isCompleted) {
-    // 1. Find the final quiz of the course (where sectionId is null)
-    const finalQuiz = await Quiz.findOne({
-      where: { courseId, sectionId: null }
-    });
-
-    if (finalQuiz) {
-      // 2. Check if the user has a passing attempt for this final quiz
-      const passedAttempt = await QuizAttempt.findOne({
-        where: {
-          userId,
-          quizId: finalQuiz.id,
-          passed: true
-        }
-      });
-
-      // 3. If passed, verify that they don't already have a certificate
-      if (passedAttempt) {
-        const existingCert = await Certificate.findOne({
-          where: { userId, courseId }
-        });
-
-        // 4. Create certificate if it doesn't exist
-        if (!existingCert) {
-          await Certificate.create({
-            verification_id: uuidv4(),
-            issued_at: new Date(),
-            userId,
-            courseId
-          });
-        }
-      }
-    }
-  }
+  
 };
 
 // ─── Get My Course Progress ─────────────────────────────────────────────────
