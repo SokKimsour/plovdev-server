@@ -42,6 +42,7 @@ const parseTelegramJob = (jobText) => {
         salary_min: salaryMin,
         salary_max: salaryMax,
         skills: extract('Skills') ? extract('Skills').split(',').map(s => s.trim()) : null,
+        experience: extract('Experience'),
         description: extract('Description'),
         contact_email: extract('Contact'),
         apply: extract('Apply'),
