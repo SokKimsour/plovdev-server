@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authenticateToken } = require('../middlewares/authMiddleWare');
+const { authenticateToken } = require('../middlewares/authMiddleware');
 const {
   toggleLessonProgress,
   getMyCourseProgress,

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const { createLesson, updateLesson , deleteLesson , getLessons , getLessonById} = require('../controller/Lesson.controller');
-const { authenticateToken , isAdmin} = require('../middlewares/authMiddleWare');
+const { authenticateToken , isAdmin} = require('../middlewares/authMiddleware');
 const {uploadToVideo} = require("../utils/multer");
 
 // public

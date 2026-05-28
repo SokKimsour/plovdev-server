@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getMyEnrolledCourses, getAllEnrollments } = require('../controller/Enrollment.controller');
-const { authenticateToken, isAdmin } = require('../middlewares/authMiddleWare');
+const { authenticateToken, isAdmin } = require('../middlewares/authMiddleware');
 
 // STUDENT ROUTE
 router.get('/my-courses', authenticateToken, /* #swagger.tags = ['Enrollment'] */ getMyEnrolledCourses);

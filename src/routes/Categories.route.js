@@ -7,7 +7,7 @@ const {
   updateCategory,
   deleteCategory,
 } = require("../controller/Categories.controller");
-const { isAdmin, authenticateToken } = require("../middlewares/authMiddleWare");
+const { isAdmin, authenticateToken } = require("../middlewares/authMiddleware");
 const { route } = require("./Section.route");
 const { authenticate } = require("passport");
 

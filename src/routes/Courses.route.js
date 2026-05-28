@@ -14,7 +14,7 @@ const {
   viewCourseContent
 } = require("../controller/Course.controller");
 
-const { authenticateToken, isAdmin, isEnrolled } = require('../middlewares/authMiddleWare');
+const { authenticateToken, isAdmin, isEnrolled } = require('../middlewares/authMiddleware');
 const { uploadToThumbnail } = require("../utils/multer");
 
 // PUBLIC
