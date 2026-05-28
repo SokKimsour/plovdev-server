@@ -28,13 +28,16 @@ module.exports = {
         type: Sequelize.STRING
       },
       salary_min: {
-        type: Sequelize.DECIMAL(10 , 2)
+        type: Sequelize.DECIMAL(10, 2)
       },
       salary_max: {
-        type: Sequelize.DECIMAL(10 , 2)
+        type: Sequelize.DECIMAL(10, 2)
       },
       skills: {
         type: Sequelize.JSONB
+      },
+      experience: {
+        type: Sequelize.STRING
       },
       contact_email: {
         type: Sequelize.STRING
@@ -55,8 +58,8 @@ module.exports = {
         type: Sequelize.DATE
       },
       status: {
-        type: Sequelize.ENUM("pending review" , "published" , "rejected"), 
-        defaultValue : "pending review"
+        type: Sequelize.ENUM("pending review", "published", "rejected"),
+        defaultValue: "pending review"
       },
       open_positions: {
         type: Sequelize.INTEGER

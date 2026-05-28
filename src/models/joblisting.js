@@ -23,6 +23,7 @@ module.exports = (sequelize, DataTypes) => {
     salary_min: DataTypes.DECIMAL(10 , 2),
     salary_max: DataTypes.DECIMAL(10 , 2),
     skills: DataTypes.JSONB,
+    experience: DataTypes.STRING,
     contact_email: DataTypes.STRING,
     apply: DataTypes.STRING,
     source: DataTypes.STRING,
