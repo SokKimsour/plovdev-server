@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { register , login , logout , refreshTokenFunc , getMe , forgotPassword , verifyForgotOtp , resetPassword , changePassword , loginWIthGoogle} = require('../controller/Auth.controller');
 const { loginLimiter } = require('../middlewares/rateLimits');
-const { authenticateToken } = require('../middlewares/authMiddleWare');
+const { authenticateToken } = require('../middlewares/authMiddleware');
 const passport = require('passport');
 
 router.post('/auth/register', /* #swagger.tags = ['Auth'] */  register);
