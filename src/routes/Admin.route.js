@@ -1,14 +1,14 @@
 const express = require('express');
 const router = express.Router();
 
-const { approveJob, rejectJob } = require('../controller/Admin.controller');
+const { getJobs, approveJob, rejectJob, deleteJob } = require('../controller/Admin.controller');
 
 const authenticate = require('../middlewares/authMiddleware').authenticateToken;
-const isAdmin = require('../middlewares/authMiddleware').isAdmin
+const isAdmin = require('../middlewares/authMiddleware').isAdmin;
 
-
-router.patch('/jobs/:id/approve',  /* #swagger.tags = ['Admin'] */ authenticate, isAdmin, approveJob);
-
-router.patch('/jobs/:id/reject',  /* #swagger.tags = ['Admin'] */ authenticate, isAdmin, rejectJob);
+router.get('/jobs', /* #swagger.tags = ['Admin'] */ authenticate, isAdmin, getJobs);
+router.patch('/jobs/:id/approve', /* #swagger.tags = ['Admin'] */ authenticate, isAdmin, approveJob);
+router.patch('/jobs/:id/reject', /* #swagger.tags = ['Admin'] */ authenticate, isAdmin, rejectJob);
+router.delete('/jobs/:id', /* #swagger.tags = ['Admin'] */ authenticate, isAdmin, deleteJob);
 
 module.exports = router;
