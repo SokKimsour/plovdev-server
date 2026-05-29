@@ -39,12 +39,11 @@ jobs:
           port: 22
           script_stop: true
           script: |
-            export NVM_DIR="$HOME/.nvm" #load node environment
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" #use nvm
-            cd ~/plovdev-server #go to project directory
-            git pull origin main #get latest code from github
-            npm ci --only=production #install production dependencies
-            npm run migrate #run database migrations
+            export PATH=$PATH:/usr/local/bin:/usr/bin:/bin
+            cd ~/plovdev-server
+            git pull origin main
+            npm ci --only=production
+            npm run migrate
             pm2 reload plovdev-backend --update-env || pm2 start server.js --name "plovdev-backend"
-            pm2 save #save the pm2 process
+            pm2 save
             echo "✅ Deployment completed!"
