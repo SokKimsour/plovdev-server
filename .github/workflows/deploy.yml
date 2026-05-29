@@ -1,0 +1,50 @@
+name: Deploy Backend to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  # -------------------------------------------------------------
+  # JOB 1: Test (Commented out for now until you write tests)
+  # -------------------------------------------------------------
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Packages
+        run: npm ci
+      - name: Run Tests
+        run: npm run test
+
+  deploy:
+    needs: test #waits for test job to complete before deploying
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3 #copy file from github to EC2, run script, and reload the server
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script_stop: true
+          script:
+            - export NVM_DIR="$HOME/.nvm" #load node environment
+            - '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' #use nvm
+            - cd ~/plovdev-server #go to project directory
+            - git pull origin main #get latest code from github
+            - npm ci --only=production #install production dependencies
+            - npm run migrate #run database migrations
+            - pm2 reload plovdev-backend --update-env || pm2 start server.js --name "plovdev-backend"
+            - pm2 save #save the pm2 process
+            - echo "✅ Deployment completed!"
